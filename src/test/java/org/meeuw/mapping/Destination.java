@@ -11,12 +11,15 @@ public class Destination {
 
     }
     
-    @Source(field = "moreJson", pointer ="/title")
+    @Source(field = "moreJson", pointer ="/title") // doesn't exist in SourceObject
     @Source(field = "json", pointer ="/title", sourceClass = SourceObject.class)
     String title;
 
 
     @Source(field = "anotherJson", pointer ="/a/b/value")
     String description;
+
+    @Source(field = "moreJson")
+    String moreJson;
 
 }

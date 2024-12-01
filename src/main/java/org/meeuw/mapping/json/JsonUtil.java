@@ -6,10 +6,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
+import lombok.extern.slf4j.Slf4j;
 import org.meeuw.mapping.annotations.Source;
-import org.meeuw.mapping.annotations.Sources;
 import org.meeuw.mapping.impl.Util;
+import static org.meeuw.mapping.impl.Util.getAnnotation;
 
+@Slf4j
 public class JsonUtil {
       /**
      * Lenient json mapper
@@ -25,36 +27,14 @@ public class JsonUtil {
 
 
     static Optional<Object> getSourceValue(Object source, Field destination) {
-        Source annotation = getAnnotation(source.getClass(), destination);
-        return getSourceJsonValue(source, annotation.field(), annotation.pointer());
+        Source annotation = getAnnotation(source.getClass(), destination).orElseThrow();
+
+        Field f = Util.getSourceField(source.getClass(), annotation.field()).orElseThrow();
+        return getSourceJsonValue(source, f, annotation.pointer());
     }
 
-    private static Source getAnnotation(Class<?> sourceClass, Field f) {
-        Source s = null;
-        {
 
-            Sources sources = f.getAnnotation(Sources.class);
-            if (sources != null) {
-                for (Source proposal : sources.value()) {
-                    if (proposal.sourceClass().isAssignableFrom(sourceClass)) {
-                        if (s == null) {
-                            s = proposal;
-                        } else {
-                            if (s.sourceClass().isAssignableFrom(proposal.sourceClass())) {
-                                // this means proposal is more specific
-                                s = proposal;
-                            }
-                        }
-                    }
-                }
-            } else {
-                s = f.getAnnotation(Source.class);
-            }
-        }
-        return s;
-    }
-
-    static Optional<Object> getSourceJsonValue(Object source, String sourceField, String pointer) {
+    public static Optional<Object> getSourceJsonValue(Object source, Field sourceField, String pointer) {
 
          return getSourceJsonValue(source, sourceField)
              .map(jn -> jn.at(pointer))
@@ -62,7 +42,7 @@ public class JsonUtil {
     }
 
 
-    static Optional<JsonNode> getSourceJsonValue(Object source, String sourceField) {
+    static Optional<JsonNode> getSourceJsonValue(Object source, Field sourceField) {
 
         return Util.getSourceValue(source, sourceField)
             .map(json -> {

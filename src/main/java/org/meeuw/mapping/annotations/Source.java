@@ -4,6 +4,7 @@
 package org.meeuw.mapping.annotations;
 
 import java.lang.annotation.*;
+
 /**
  * This annotation can be put on a field of some destination object, to indicate
  * from which other object's field it must come.
@@ -18,6 +19,8 @@ public @interface Source {
      */
     String pointer() default "";
 
+
+
     /**
      * Name of the field in the source class
      */
@@ -31,4 +34,5 @@ public @interface Source {
      * matches the actual class of the source object will be used then.
      */
     Class<?> sourceClass() default Object.class;
+
 }
