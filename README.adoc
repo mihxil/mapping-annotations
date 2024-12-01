@@ -1,0 +1,6 @@
+= mapping annotations
+
+Provides some annotation that can be added to field, indicating how they must be mapped
+
+== Json Source
+
