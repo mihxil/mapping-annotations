@@ -4,7 +4,7 @@ image:https://github.com/mihxil/mapping-annotations/actions/workflows/maven.yml/
 image:https://codecov.io/gh/mihxil/mapping-annotations/branch/main/graph/badge.svg[codecov,link=https://codecov.io/gh/mihxil/mapping-annotations]
 image:https://img.shields.io/nexus/s/https/oss.sonatype.org/org.meeuw.mapping/mapping-annotations.svg[snapshots,link=https://oss.sonatype.org/content/repositories/snapshots/org/meeuw/mapping/]
 image:https://www.javadoc.io/badge/org.meeuw.mapping/mapping-annotations.svg?color=blue[javadoc,link=https://www.javadoc.io/doc/org.meeuw.mapping/mapping-annotations]
-image:https://img.shields.io/maven-central/v/org.meeuw.mpping/mapping-annotations.svg?label=Maven%20Central[Maven Central,link=https://central.sonatype.com/artifact/org.meeuw.mapping/mappings-annotations/overview]
+image:https://img.shields.io/maven-central/v/org.meeuw.mapping/mapping-annotations.svg?label=Maven%20Central[Maven Central,link=https://central.sonatype.com/artifact/org.meeuw.mapping/mapping-annotations/overview]
 
 Provides some annotation that can be added to field, indicating how they must be mapped
 
@@ -63,7 +63,7 @@ class DestinationObject {
 
 == Java records[[java_records]]
 
-For now java records are supported if they have a (lombok generated builder). Like so
+For now, java records (and probably other readonly structures) are supported if they have a (lombok generated builder). Like so
 
 [source, java]
 ----
@@ -78,6 +78,8 @@ public record DestinationRecord(
 ) {
 }
 ----
+
+This is not tested for non-default lombok configurations. It assumes the builder to be named `-Builder`, it assumes the build-method in it to be `build()`. The `@Source` annotation are then found on the fields of the built class' fields.
 
 
 [source, java]
@@ -116,4 +118,6 @@ https://github.com/mihxil/modelmapper-json-source-annotation[This was however my
 - Everything not completely simple seemed to be cumbersome
 - Error message left to wish for
 
-
+== Requirements
+- java 17
+- jackson2 is used for json parsing, slf4j2 for logging
