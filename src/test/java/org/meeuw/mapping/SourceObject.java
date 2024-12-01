@@ -5,4 +5,6 @@ public class SourceObject {
     byte[] json;
 
     String moreJson;
+
+    String title;
 }

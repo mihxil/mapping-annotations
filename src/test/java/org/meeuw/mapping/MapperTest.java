@@ -52,7 +52,16 @@ class MapperTest {
             log.debug("{}", destination);
         }
         log.info("Took {}", Duration.between(start, Instant.now()));
+    }
 
+    @Test
+    public void toRecord() {
+        SourceObject sourceObject = new SourceObject();
+        sourceObject.setTitle("bla bla");
+        var builder = DestinationRecord.builder();
+        Mapper.map(sourceObject, builder);
+        var r = builder.build();
+        assertThat(r.title()).isEqualTo("bla bla");
     }
 
 

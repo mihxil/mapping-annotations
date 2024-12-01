@@ -3,7 +3,7 @@
  */
 package org.meeuw.mapping.impl;
 
-import java.lang.reflect.Field;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +41,11 @@ public class Util {
 
 
     public static Optional<Source> getAnnotation(Class<?> sourceClass, Field f) {
+
+        Optional<Field> builderField = isBuilderField(f);
+        if (builderField.isPresent()) {
+            f = builderField.get();
+        }
         Source s = null;
         Sources sources = f.getAnnotation(Sources.class);
         if (sources != null) {
@@ -58,11 +63,36 @@ public class Util {
             }
         } else {
             Source proposal = f.getAnnotation(Source.class);
-            s =  matches(proposal, sourceClass, f.getName()) ? proposal : null;
+            s = matches(proposal, sourceClass, f.getName()) ? proposal : null;
         }
         return Optional.ofNullable(s);
     }
+
+    private static Optional<Field> isBuilderField(Field f) {
+        if (f.getAnnotations().length == 0) {
+            Class<?> clazz = f.getDeclaringClass();
+            if (clazz.getName().endsWith("Builder")) {
+                try {
+                    Method build = clazz.getDeclaredMethod("build");
+                    if (Modifier.isPublic(build.getModifiers()) && ! Modifier.isStatic(build.getModifiers())) {
+                        Class<?> targetClass = build.getReturnType();
+                        Field buildField = targetClass.getDeclaredField(f.getName());
+                        return Optional.of(buildField);
+                    }
+                } catch (NoSuchMethodException nsme){
+
+                } catch (NoSuchFieldException e) {
+                    log.warn(e.getMessage(), e);
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
     private static boolean matches(Source source, Class<?> sourceClass, String destinationField) {
+        if (source == null) {
+            return false;
+        }
         String field = source.field();
         if ("".equals(field)) {
             field = destinationField;

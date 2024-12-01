@@ -30,7 +30,7 @@ class DestinationObject {
 }
 ----
 
-All field annotated like so can be filled like this:
+All fields annotated like so can be filled like this:
 [source, java]
 ----
 import org.meeuw.mapping.Mapper;
@@ -41,6 +41,13 @@ import org.meeuw.mapping.Mapper;
     Mapper.map(sourceObject, destination);;
 
 ----
+
+So, this initial implementation:
+
+- Makes no efforts _creating_ the objects. It just _fills_ them using reflection/direct field access
+
+- So the object need be modifiable, but see link:#java_records[how it is supported for java records], immutability can be obtained by mapping to a builder.
+
 
 == Json 'sub' fields
 
@@ -55,6 +62,40 @@ class DestinationObject {
   String title;
 }
 ----
+
+== Java records[[java_records]]
+
+For now java records are supported if they have a (lombok generated builder). Like so
+
+[source, java]
+----
+package org.meeuw.mapping;
+
+import org.meeuw.mapping.annotations.Source;
+
+@lombok.Builder
+public record DestinationRecord(
+    @Source
+    String title
+) {
+}
+----
+
+
+[source, java]
+----
+    @Test
+    public void toRecord() {
+        SourceObject sourceObject = new SourceObject();
+        sourceObject.setTitle("bla bla");
+        var builder = DestinationRecord.builder();
+        Mapper.map(sourceObject, builder);
+        var r = builder.build();
+        assertThat(r.title()).isEqualTo("bla bla");
+    }
+----
+
+So, you can map to the _builder_.
 
 
 == Bean mapping generally
