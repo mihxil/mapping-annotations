@@ -20,10 +20,10 @@ import org.meeuw.mapping.annotations.Source;
 class DestinationObject {
 
    @Source // This field is sourced by a field with the same name in souce objects
-  String title;
+   String title;
 
    @Source(field = "_name") // This field is sourced by a field with the '_name' in source objects
-  String name;
+   String name;
 
    @Source(field = "id", sourceClass=Identifiable.class) // This field is sourced by a field with the 'id', if the source fields is a 'Identifiable.
    Long id;
@@ -36,9 +36,8 @@ All fields annotated like so can be filled like this:
 import org.meeuw.mapping.Mapper;
 ...
 
-    DestinationObject destination; SourceObject sourceObject;
-
-    Mapper.map(sourceObject, destination);;
+DestinationObject destination; SourceObject sourceObject;
+Mapper.map(sourceObject, destination);;
 
 ----
 
@@ -56,10 +55,9 @@ It is also possible to pick up values from a field containing json
 [source, java]
 ----
 class DestinationObject {
-
     ...
-   @Source(field = "json", pointer="/title") // This field is sourced by the json field 'title' within a field 'json' in the source object
-  String title;
+    @Source(field = "json", pointer="/title") // This field is sourced by the json field 'title' within a field 'json' in the source object
+    String title;
 }
 ----
 
@@ -84,15 +82,15 @@ public record DestinationRecord(
 
 [source, java]
 ----
-    @Test
-    public void toRecord() {
-        SourceObject sourceObject = new SourceObject();
-        sourceObject.setTitle("bla bla");
-        var builder = DestinationRecord.builder();
-        Mapper.map(sourceObject, builder);
-        var r = builder.build();
-        assertThat(r.title()).isEqualTo("bla bla");
-    }
+@Test
+public void toRecord() {
+    SourceObject sourceObject = new SourceObject();
+    sourceObject.setTitle("bla bla");
+    var builder = DestinationRecord.builder();
+    Mapper.map(sourceObject, builder);
+    var r = builder.build();
+    assertThat(r.title()).isEqualTo("bla bla");
+}
 ----
 
 So, you can map to the _builder_.
@@ -104,15 +102,18 @@ There are several bean mapping frameworks available, which may be used in stead 
 
 === MapStruct
 
-Mapstruct is used compile time, to generate straightforward mappings code. It is
+https://github.com/mapstruct/mapstruct[Mapstruct] is used compile time, to generate straightforward mappings code. It is
 driven by 'mapper' interfaces which can be configured with annotations.
-I didn't quite get it working yet, but I think it is mostly targeted and straightforward mappings where source and destination are very similar.
+I didn't quite get it working yet, but I think it is mostly targeted at straightforward mappings where source and destination are very similar.
 
 
 === ModelMapper
 
-ModelMapper seems more customizable, but still is basically targeted at mapping between very similar types. E.g. if you need to ignore fields those have to be skipped explicitily.
+https://modelmapper.org/[ModelMapper] seems more customizable, but still is basically targeted at mapping between very similar types. E.g. if you need to ignore fields those have to be skipped explicitly.
 
-This was however my first approach. It is indeed possible to plugin the code of this project into ModelMapper. I'm  not sure how usefull it is but, hopefully you could at least still profit from mapping between basic types.
+https://github.com/mihxil/modelmapper-json-source-annotation[This was however my first approach]. It is indeed possible to plugin the code of this project into ModelMapper. I'm  not sure how useful it is but, hopefully you could at least still profit from mapping between basic types.
+
+- Everything not completely simple seemed to be cumbersome
+- Error message left to wish for
 
 
