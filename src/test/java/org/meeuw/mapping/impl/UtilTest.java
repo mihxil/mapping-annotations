@@ -11,38 +11,47 @@ class UtilTest {
 
 
    @Test
-   public void getSourceField() {
+   void getSourceField() {
 
        {
-           Field value = Util.getSourceField(AnotherSource.class, "moreJson").orElseThrow();
-           assertThat(value.getName()).isEqualTo("moreJson");
+           Field value = Util.getSourceField(AnotherSource.class, "anotherJson").orElseThrow();
+           assertThat(value.getName()).isEqualTo("anotherJson");
            assertThat(value.getDeclaringClass()).isEqualTo(AnotherSource.class);
        }
        {
-           Field value = Util.getSourceField(ExtendedSourceObject.class, "anotherJson").orElseThrow();
-           assertThat(value.getName()).isEqualTo("anotherJson");
+           Field value = Util.getSourceField(ExtendedSourceObject.class, "moreJson").orElseThrow();
+           assertThat(value.getName()).isEqualTo("moreJson");
            assertThat(value.getDeclaringClass()).isEqualTo(SourceObject.class);
        }
    }
 
    @Test
-   public void getSourceValue() {
+   void getSourceValue() {
        SourceObject source = new SourceObject();
-       source.setAnotherJson("{'title': 'foobar'}");
-       Optional<Object> moreJson = Util.getSourceValue(source, "anotherJson");
-       assertThat(moreJson).contains(source.getAnotherJson());
+       source.setMoreJson("{'title': 'foobar'}");
+       Optional<Object> moreJson = Util.getSourceValue(source, "moreJson");
+       assertThat(moreJson).contains(source.getMoreJson());
    }
 
     @Test
-    public void getExtendedSourceValue() {
+    void getExtendedSourceValue() {
         ExtendedSourceObject source = new ExtendedSourceObject();
-       source.setAnotherJson("{'title': 'foobar'}");
-       Optional<Object> moreJson = Util.getSourceValue(source, "anotherJson");
-       assertThat(moreJson).contains(source.getAnotherJson());
+        source.setMoreJson("{'title': 'foobar'}");
+        Optional<Object> moreJson = Util.getSourceValue(source, "moreJson");
+        assertThat(moreJson).contains(source.getMoreJson());
+    }
+
+
+
+   @Test
+   void getMappedDestinationProperties() {
+       assertThat(Util.getMappedDestinationProperties(ExtendedSourceObject.class, Destination.class)).containsExactlyInAnyOrder("title", "description", "moreJson");
    }
 
-
-
+    @Test
+    void getMappedDestinationProperties2() {
+        assertThat(Util.getMappedDestinationProperties(AnotherSource.class , Destination.class)).containsExactlyInAnyOrder("title");
+    }
 
 
 }

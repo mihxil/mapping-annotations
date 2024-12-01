@@ -11,7 +11,7 @@ public class AnotherSource {
 
     static final ObjectMapper MAPPER = new ObjectMapper();
 
-    JsonNode moreJson;
+    JsonNode anotherJson;
 
     @SneakyThrows
     public static AnotherSource of(String json) {

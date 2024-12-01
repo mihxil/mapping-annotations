@@ -10,10 +10,16 @@ import org.meeuw.mapping.json.JsonUtil;
 @Slf4j
 public class Mapper {
 
+    private Mapper() {
+        // no instances
+    }
+
+
     public static void map(Object source, Object destination) {
 
         for (Field f: destination.getClass().getDeclaredFields()) {
 
+            f.setAccessible(true);
             Optional<Source> annotation = getAnnotation(source.getClass(), f);
             annotation.ifPresent(s -> {
                 String sourceFieldName = s.field();
