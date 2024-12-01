@@ -34,14 +34,8 @@ public class Util {
 
     }
 
-    public static Optional<String> getSource(Class<?> sourceClass, Class<?> destinationClass, String field) {
-
-        return null;
-    }
-
 
     public static Optional<Source> getAnnotation(Class<?> sourceClass, Field f) {
-
         Optional<Field> builderField = isBuilderField(f);
         if (builderField.isPresent()) {
             f = builderField.get();
@@ -69,7 +63,7 @@ public class Util {
     }
 
     private static Optional<Field> isBuilderField(Field f) {
-        if (f.getAnnotations().length == 0) {
+        if (f != null && f.getAnnotations().length == 0) {
             Class<?> clazz = f.getDeclaringClass();
             if (clazz.getName().endsWith("Builder")) {
                 try {

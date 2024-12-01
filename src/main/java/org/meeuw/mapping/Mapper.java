@@ -1,7 +1,9 @@
 package org.meeuw.mapping;
 
 import java.lang.reflect.Field;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
@@ -26,17 +28,10 @@ public class Mapper {
 
     public static <SOURCE, DESTINATION> BiConsumer<SOURCE, DESTINATION> getterAndSetter(Field f, Class<SOURCE> sourceClass) {
         f.setAccessible(true);
-        return new BiConsumer<>() {
-            @Override
-            public void accept(SOURCE source, DESTINATION destination) {
-                getAndSet(f, sourceClass, source, destination);
-            }
-        };
-
-
+        return (source, destination) -> getAndSet(f, sourceClass, source, destination);
     }
 
-    private static <SOURCE, DESTINATION> void getAndSet(Field f, Class<SOURCE> sourceClass, SOURCE source, DESTINATION destination) {
+    private static void getAndSet(Field f, Class<?> sourceClass, Object source, Object destination) {
         Function<Object, Optional<Object>> getter = sourceGetter(f, sourceClass);
         Optional<Object> value = getter.apply(source);
         value.ifPresent( v-> {
@@ -44,7 +39,14 @@ public class Mapper {
         });
     }
 
-    public static <SOURCE> Function<Object, Optional<Object>> sourceGetter(Field f, Class<? extends SOURCE> sourceClass) {
+
+    private static final Map<Field, Map<Class<?>, Function<Object, Optional<Object>>>> getterCache = new ConcurrentHashMap<>();
+    public static Function<Object, Optional<Object>> sourceGetter(Field f, Class<?> sourceClass) {
+        Map<Class<?>, Function<Object, Optional<Object>>> c = getterCache.computeIfAbsent(f, (fi) -> new ConcurrentHashMap<>());
+        return c.computeIfAbsent(sourceClass, cl -> _sourceGetter(f, sourceClass));
+
+    }
+    private static  Function<Object, Optional<Object>> _sourceGetter(Field f, Class<?> sourceClass) {
         Optional<Source> annotation = getAnnotation(sourceClass, f);
         if (annotation.isPresent()) {
             Source s = annotation.get();
@@ -66,7 +68,13 @@ public class Mapper {
         return s -> Optional.empty();
     }
 
-    private static <DESTINATION, SOURCE> BiConsumer<DESTINATION, Object> destinationSetter(Field f, Class<SOURCE> sourceClass) {
+    private static final Map<Field, Map<Class<?>, BiConsumer<Object, Object>>> setterCache = new ConcurrentHashMap<>();
+
+    private static  BiConsumer<Object, Object> destinationSetter(Field f, Class<?> sourceClass) {
+        Map<Class<?>, BiConsumer<Object, Object>> cache = setterCache.computeIfAbsent(f, fi -> new ConcurrentHashMap<>());
+        return cache.computeIfAbsent(sourceClass, c -> _destinationSetter(f, c));
+    }
+    private static <DESTINATION, SOURCE> BiConsumer<DESTINATION, Object> _destinationSetter(Field f, Class<SOURCE> sourceClass) {
         Optional<Source> annotation = getAnnotation(sourceClass, f);
         if (annotation.isPresent()) {
             Source s = annotation.get();
