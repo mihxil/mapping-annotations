@@ -1,6 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.meeuw.annotations</groupId>
+  <groupId>org.meeuw.mapping</groupId>
   <artifactId>mappings-annotations</artifactId>
   <url>https://github.com/mihxil/mapping-annotations</url>
   <version>0.1-SNAPSHOT</version>

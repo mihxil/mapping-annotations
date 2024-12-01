@@ -1,5 +1,11 @@
 = mapping annotations
 
+image:https://github.com/mihxil/mapping-annotations/actions/workflows/maven.yml/badge.svg?[Build Status,link=https://github.com/mihxil/mapping-annotations/actions/workflows/maven.yml]
+image:https://codecov.io/gh/mihxil/mapping-annotations/branch/main/graph/badge.svg[codecov,link=https://codecov.io/gh/mihxilmapping-annotations]
+image:https://img.shields.io/nexus/s/https/oss.sonatype.org/org.meeuw.mapping/json-source-annotation.svg[snapshots,link=https://oss.sonatype.org/content/repositories/snapshots/org/meeuw/mapping/]
+image:https://www.javadoc.io/badge/org.meeuw.mapping/json-source-annotation.svg?color=blue[javadoc,link=https://www.javadoc.io/doc/org.meeuw.mapping/mapping-annotations]
+image:https://img.shields.io/maven-central/v/org.meeuw.modelmapper/json-source-annotation.svg?label=Maven%20Central[Maven Central,link=https://central.sonatype.com/artifact/org.meeuw.modelmapper/json-source-annotation/overview]
+
 Provides some annotation that can be added to field, indicating how they must be mapped
 
 == Json Source
