@@ -76,13 +76,14 @@ public class Mapper {
             }
             Optional<Field> sourceField = getSourceField(sourceClass, sourceFieldName);
             if (sourceField.isPresent()) {
+                f.setAccessible(true);
                 return new BiConsumer<>() {
                     @Override
                     public void accept(DESTINATION destination, Object o) {
                         try {
                             f.set(destination, o);
                         } catch (Exception e) {
-
+                            log.warn(e.getMessage());
                         }
                     }
                 };
