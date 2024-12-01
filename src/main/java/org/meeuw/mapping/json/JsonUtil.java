@@ -13,6 +13,10 @@ import static org.meeuw.mapping.impl.Util.getAnnotation;
 
 @Slf4j
 public class JsonUtil {
+
+    private JsonUtil() {
+        // no instances
+    }
       /**
      * Lenient json mapper
      */

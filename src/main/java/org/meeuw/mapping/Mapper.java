@@ -4,7 +4,7 @@ import java.lang.reflect.Field;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.meeuw.mapping.annotations.Source;
-import org.meeuw.mapping.impl.Util;
+import static org.meeuw.mapping.impl.Util.*;
 import org.meeuw.mapping.json.JsonUtil;
 
 @Slf4j
@@ -14,14 +14,17 @@ public class Mapper {
 
         for (Field f: destination.getClass().getDeclaredFields()) {
 
-            Optional<Source> annotation = org.meeuw.mapping.impl.Util.getAnnotation(source.getClass(), f);
+            Optional<Source> annotation = getAnnotation(source.getClass(), f);
             annotation.ifPresent(s -> {
-
-                Optional<Field> sourceField = Util.getSourceField(source.getClass(), s.field());
+                String sourceFieldName = s.field();
+                if ("".equals(sourceFieldName)) {
+                    sourceFieldName = f.getName();
+                }
+                Optional<Field> sourceField = getSourceField(source.getClass(), sourceFieldName);
                 sourceField.ifPresent(sf -> {
                     Optional<Object> value;
                     if ("".equals(s.pointer())) {
-                        value = Util.getSourceValue(source, sf);
+                        value = getSourceValue(source, sf);
                     } else {
                         value = JsonUtil.getSourceJsonValue(source, sf, s.pointer());
                     }

@@ -1,5 +1,6 @@
 package org.meeuw.mapping;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Getter;
 import lombok.Setter;
 import org.meeuw.mapping.annotations.Source;
@@ -19,7 +20,7 @@ public class Destination {
     @Source(field = "anotherJson", pointer ="/a/b/value")
     String description;
 
-    @Source(field = "moreJson")
-    String moreJson;
+    @Source
+    JsonNode moreJson;
 
 }
