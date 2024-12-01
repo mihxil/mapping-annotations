@@ -19,7 +19,7 @@
   <scm>
     <connection>scm:git:${project.scm.url}.git</connection>
     <developerConnection>scm:git:${project.scm.url}.git</developerConnection>
-    <url>https://github.com/mihxil/mappings-annotations</url>
+    <url>https://github.com/mihxil/mapping-annotations</url>
     <tag>HEAD</tag>
   </scm>
 
