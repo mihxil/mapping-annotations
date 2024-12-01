@@ -20,7 +20,7 @@ public class Destination {
     @Source(field = "moreJson", pointer ="/a/b/value")
     String description;
 
-    @Source
+    @Source()
     JsonNode moreJson;
 
 }

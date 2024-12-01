@@ -18,18 +18,19 @@ public class Util {
     }
 
 
-    public static Set<String> getMappedDestinationProperties(Class<?> sourceClass, Class<?> destinationClass) {
-        Set<String> result = new HashSet<>();
+    public static Map<String, Field> getMappedDestinationProperties(Class<?> sourceClass, Class<?> destinationClass) {
+        Map<String, Field> result = new HashMap<>();
         Class<?> superClass = sourceClass.getSuperclass();
         if (superClass != null) {
-            result.addAll(getMappedDestinationProperties(superClass, destinationClass));
+            result.putAll(getMappedDestinationProperties(superClass, destinationClass));
         }
         for (Field field : destinationClass.getDeclaredFields()) {
-            getAnnotation(sourceClass, field).ifPresent(a -> {
-                result.add(field.getName());
-            });
+            getAnnotation(sourceClass, field)
+                .ifPresent(a -> {
+                    result.put(field.getName(), field);
+                });
         }
-        return Collections.unmodifiableSet(result);
+        return Collections.unmodifiableMap(result);
 
     }
 
@@ -44,7 +45,6 @@ public class Util {
         Sources sources = f.getAnnotation(Sources.class);
         if (sources != null) {
             for (Source proposal : sources.value()) {
-
                 if (matches(proposal, sourceClass, f.getName())) {
                     if (s == null) {
                         s = proposal;
