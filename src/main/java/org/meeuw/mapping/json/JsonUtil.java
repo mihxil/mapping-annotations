@@ -30,25 +30,25 @@ public class JsonUtil {
 
 
 
-    static Optional<Object> getSourceValue(Object source, Field destination) {
+    static Optional<Object> getSourceValue(Object source, Field destination, String... path) {
         Source annotation = getAnnotation(source.getClass(), destination).orElseThrow();
 
         Field f = Util.getSourceField(source.getClass(), annotation.field()).orElseThrow();
-        return getSourceJsonValue(source, f, annotation.pointer());
+        return getSourceJsonValue(source, f, annotation.path(), annotation.pointer());
     }
 
 
-    public static Optional<Object> getSourceJsonValue(Object source, Field sourceField, String pointer) {
+    public static Optional<Object> getSourceJsonValue(Object source, Field sourceField, String[] path, String pointer) {
 
-         return getSourceJsonValue(source, sourceField)
+         return getSourceJsonValue(source, sourceField, path)
              .map(jn -> jn.at(pointer))
              .map(JsonUtil::unwrapJson);
     }
 
 
-    static Optional<JsonNode> getSourceJsonValue(Object source, Field sourceField) {
+    static Optional<JsonNode> getSourceJsonValue(Object source, Field sourceField, String... path) {
 
-        return Util.getSourceValue(source, sourceField)
+        return Util.getSourceValue(source, sourceField, path)
             .map(json -> {
                 JsonNode node;
                 try {

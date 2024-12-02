@@ -25,6 +25,8 @@ public @interface Source {
      * Name of the field in the source class
      */
     String field() default "";
+    
+    String[] path() default {};
 
     /**
      * The source class in with the other field can be found

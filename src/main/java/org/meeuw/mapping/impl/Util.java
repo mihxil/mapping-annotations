@@ -73,9 +73,7 @@ public class Util {
                         Field buildField = targetClass.getDeclaredField(f.getName());
                         return Optional.of(buildField);
                     }
-                } catch (NoSuchMethodException nsme){
-
-                } catch (NoSuchFieldException e) {
+                } catch (NoSuchMethodException | NoSuchFieldException e) {
                     log.warn(e.getMessage(), e);
                 }
             }
@@ -122,21 +120,30 @@ public class Util {
             }
             log.debug("No source field {} found for {}", sourceField, sourceClass);
             return Optional.empty();
-    }
+    }     
 
-    public static Optional<Object> getSourceValue(Object source, String sourceField) {
+    public static Optional<Object> getSourceValue(Object source, String sourceField, String... path) {
 
          return getSourceField(source.getClass(), sourceField)
-             .flatMap(f -> getSourceValue(source, f));
+             .flatMap(f -> getSourceValue(source, f, path));
     }
 
-    public static Optional<Object> getSourceValue(Object source, Field f) {
+    public static Optional<Object> getSourceValue(Object source, Field f, String... path) {
           try {
-              return Optional.ofNullable(f.get(source));
-          } catch (IllegalAccessException e) {
+              Object value = f.get(source);
+              for (String p : path) {
+                  if (value != null) {
+                      Field su = value.getClass().getDeclaredField(p);
+                      su.setAccessible(true);
+                      value = su.get(value);
+                  }
+              }
+              return Optional.ofNullable(value);
+          } catch (IllegalAccessException | NoSuchFieldException e) {
               log.warn(e.getMessage());
               return Optional.empty();
           }
+          
     }
 
 

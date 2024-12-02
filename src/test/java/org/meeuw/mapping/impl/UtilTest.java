@@ -12,7 +12,6 @@ class UtilTest {
 
    @Test
    void getSourceField() {
-
        {
            Field value = Util.getSourceField(AnotherSource.class, "anotherJson").orElseThrow();
            assertThat(value.getName()).isEqualTo("anotherJson");
@@ -37,8 +36,16 @@ class UtilTest {
     void getExtendedSourceValue() {
         ExtendedSourceObject source = new ExtendedSourceObject();
         source.setMoreJson("{'title': 'foobar'}");
+        source.setSubObject(new SubObject(123L));
+        
         Optional<Object> moreJson = Util.getSourceValue(source, "moreJson");
         assertThat(moreJson).contains(source.getMoreJson());
+        
+        Optional<Object> id = Util.getSourceValue(source, "subObject", "id");
+        assertThat(id).contains(123L);
+        
+        
+        
     }
 
 

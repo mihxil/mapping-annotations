@@ -113,7 +113,7 @@ I didn't quite get it working yet, but I think it is mostly targeted at straight
 
 https://modelmapper.org/[ModelMapper] seems more customizable, but still is basically targeted at mapping between very similar types. E.g. if you need to ignore fields those have to be skipped explicitly.
 
-https://github.com/mihxil/modelmapper-json-source-annotation[This was however my first approach]. It is indeed possible to plugin the code of this project into ModelMapper. I'm  not sure how useful it is but, hopefully you could at least still profit from mapping between basic types.
+https://github.com/mihxil/modelmapper-json-source-annotation[This was however my first approach]. It is indeed possible to plugin the code of this project into ModelMapper. I'm  not sure how useful it is but, hopefully you could at least still profit from mapping between scalar types.
 
 - Everything not completely simple seemed to be cumbersome
 - Error message left to wish for
@@ -121,3 +121,10 @@ https://github.com/mihxil/modelmapper-json-source-annotation[This was however my
 == Requirements
 - java 17
 - jackson2 is used for json parsing, slf4j2 for logging
+
+
+== TODO
+
+- Automatic mapping subtypes?
+- Instantiating?
+- Implicit scalar-mapping (may be we can profit from spring conversion? from model mapper?)

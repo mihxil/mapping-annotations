@@ -1,13 +1,13 @@
 package org.meeuw.mapping;
 
 import java.lang.reflect.Field;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import org.meeuw.mapping.annotations.Source;
+import org.meeuw.mapping.annotations.Sources;
 import static org.meeuw.mapping.impl.Util.*;
 import org.meeuw.mapping.json.JsonUtil;
 
@@ -19,23 +19,20 @@ public class Mapper {
     }
 
 
-    public static <SOURCE, DESTINATION> void map(SOURCE source, DESTINATION destination) {
-        Class<SOURCE> clazz = (Class<SOURCE>) source.getClass();
+    public static void map(Object source, Object destination) {
+        Class<?> clazz = source.getClass();
         for (Field f: destination.getClass().getDeclaredFields()) {
             getAndSet(f, clazz, source, destination);
         }
     }
-
-    public static <SOURCE, DESTINATION> BiConsumer<SOURCE, DESTINATION> getterAndSetter(Field f, Class<SOURCE> sourceClass) {
-        f.setAccessible(true);
-        return (source, destination) -> getAndSet(f, sourceClass, source, destination);
-    }
-
-    private static void getAndSet(Field f, Class<?> sourceClass, Object source, Object destination) {
-        Function<Object, Optional<Object>> getter = sourceGetter(f, sourceClass);
+ 
+    private static void getAndSet(Field destinationField, Class<?> sourceClass, Object source, Object destination) {
+        Function<Object, Optional<Object>> getter = sourceGetter(destinationField, sourceClass);
         Optional<Object> value = getter.apply(source);
-        value.ifPresent( v-> {
-            destinationSetter(f, sourceClass).accept(destination, v);
+        value.ifPresentOrElse( v-> {
+            destinationSetter(destinationField, sourceClass).accept(destination, v);
+        }, () -> {
+                log.warn("No field found for {} ({}) {}", destinationField.getName(), getAllSourceAnnotations(destinationField),  sourceClass);
         });
     }
 
@@ -59,9 +56,9 @@ public class Mapper {
                 Field sf = sourceField.get();
 
                 if ("".equals(s.pointer())) {
-                    return source -> getSourceValue(source, sf);
+                    return source -> getSourceValue(source, sf, s.path());
                 } else {
-                    return source -> JsonUtil.getSourceJsonValue(source, sf, s.pointer());
+                    return source -> JsonUtil.getSourceJsonValue(source,  sf, s.path(), s.pointer());
                 }
             }
         }
@@ -91,12 +88,22 @@ public class Mapper {
                         try {
                             f.set(destination, o);
                         } catch (Exception e) {
-                            log.warn(e.getMessage());
+                            log.warn("When setting {} in {}: {}", o, f, e.getMessage());
                         }
                     }
                 };
             }
         }
         return (d, v) -> {};
+    }
+    
+    private static List<Source> getAllSourceAnnotations(Field destField) {
+        Sources sources = destField.getAnnotation(Sources.class);
+        if (sources != null) {
+            return List.of(sources.value());
+        }
+        return List.of(destField.getAnnotation(Source.class));
+        
+        
     }
 }

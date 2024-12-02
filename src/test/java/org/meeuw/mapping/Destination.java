@@ -22,5 +22,8 @@ public class Destination {
 
     @Source()
     JsonNode moreJson;
+    
+    @Source(field = "subObject", path="id", sourceClass = ExtendedSourceObject.class)
+    Long id;
 
 }
