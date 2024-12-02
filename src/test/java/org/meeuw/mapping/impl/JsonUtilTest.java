@@ -1,4 +1,4 @@
-package org.meeuw.mapping.json;
+package org.meeuw.mapping.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -63,6 +63,8 @@ class JsonUtilTest {
           }
           """);
         Mapper.map(node, subObject);
+
+        assertThat(subObject.getBroadcaster()).isEqualTo("VPRO");
         
     }
     

@@ -36,26 +36,32 @@ class UtilTest {
     void getExtendedSourceValue() {
         ExtendedSourceObject source = new ExtendedSourceObject();
         source.setMoreJson("{'title': 'foobar'}");
-        //source.setSubObject(new SubObject(123L));
-        
+
         Optional<Object> moreJson = Util.getSourceValue(source, "moreJson");
         assertThat(moreJson).contains(source.getMoreJson());
-        
+    }
+    @Test
+    void withPath() {
+        ExtendedSourceObject source = new ExtendedSourceObject();
+        source.setSubObject(new SubObject(null, 123L));
+
+
         Optional<Object> id = Util.getSourceValue(source, "subObject", "id");
         assertThat(id).contains(123L);
-        
-        
-        
     }
-    
-    
-
-
 
 
    @Test
    void getMappedDestinationProperties() {
-       assertThat(Util.getMappedDestinationProperties(ExtendedSourceObject.class, Destination.class).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson");
+       assertThat(Util.getMappedDestinationProperties(
+           ExtendedSourceObject.class,
+           Destination.class
+       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "id", "list");
+
+       assertThat(Util.getMappedDestinationProperties(
+           SourceObject.class,
+           Destination.class
+       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "list");
    }
 
     @Test

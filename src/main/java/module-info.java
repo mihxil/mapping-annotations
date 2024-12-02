@@ -6,6 +6,5 @@ module org.meeuw.mapping.annotations {
 
     exports org.meeuw.mapping.annotations;
     exports org.meeuw.mapping;
-    exports org.meeuw.mapping.json;
-    exports org.meeuw.mapping.impl;
+
 }

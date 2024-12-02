@@ -1,4 +1,4 @@
-package org.meeuw.mapping.json;
+package org.meeuw.mapping.impl;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -7,10 +7,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import lombok.extern.slf4j.Slf4j;
 import org.meeuw.mapping.Mapper;
 import org.meeuw.mapping.annotations.Source;
-import org.meeuw.mapping.impl.Util;
 import static org.meeuw.mapping.impl.Util.getAnnotation;
 
 @Slf4j
@@ -101,6 +102,27 @@ public class JsonUtil {
                 }
                 return node;
             });
+   }
+
+
+   public static Function<Object, Optional<Object>> valueFromJsonGetter(Source s) {
+       UnaryOperator<JsonNode> withField = UnaryOperator.identity();
+       if (!"".equals(s.field())) {
+           withField = o -> o.get(s.field());
+       }
+       for (String p : s.path()) {
+           final UnaryOperator<JsonNode> prev = withField;
+           withField = o -> prev.apply(o).get(p);
+       }
+       final UnaryOperator<JsonNode> finalWithFieldAndPath = withField;
+       return o -> {
+           JsonNode value = finalWithFieldAndPath.apply((JsonNode) o);
+           if ("".equals(s.pointer())) {
+               return Optional.ofNullable(unwrapJson(value));
+           } else {
+               return Optional.ofNullable(unwrapJson(value.at(s.pointer())));
+           }
+       };
    }
 
     static Object unwrapJson(JsonNode jsonNode) {
