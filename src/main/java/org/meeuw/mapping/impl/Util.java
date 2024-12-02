@@ -128,9 +128,10 @@ public class Util {
              .flatMap(f -> getSourceValue(source, f, path));
     }
 
-    public static Optional<Object> getSourceValue(Object source, Field f, String... path) {
+    public static Optional<Object> getSourceValue(Object source, Field sourceField, String... path) {
           try {
-              Object value = f.get(source);
+              sourceField.setAccessible(true);
+              Object value = sourceField.get(source);
               for (String p : path) {
                   if (value != null) {
                       Field su = value.getClass().getDeclaredField(p);

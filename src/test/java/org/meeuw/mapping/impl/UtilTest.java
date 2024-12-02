@@ -36,7 +36,7 @@ class UtilTest {
     void getExtendedSourceValue() {
         ExtendedSourceObject source = new ExtendedSourceObject();
         source.setMoreJson("{'title': 'foobar'}");
-        source.setSubObject(new SubObject(123L));
+        //source.setSubObject(new SubObject(123L));
         
         Optional<Object> moreJson = Util.getSourceValue(source, "moreJson");
         assertThat(moreJson).contains(source.getMoreJson());
@@ -47,6 +47,9 @@ class UtilTest {
         
         
     }
+    
+    
+
 
 
 

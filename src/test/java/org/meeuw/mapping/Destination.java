@@ -1,6 +1,7 @@
 package org.meeuw.mapping;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import org.meeuw.mapping.annotations.Source;
@@ -25,5 +26,8 @@ public class Destination {
     
     @Source(field = "subObject", path="id", sourceClass = ExtendedSourceObject.class)
     Long id;
+    
+    @Source(field = "moreJson", pointer ="/nisv.currentbroadcaster")
+    List<SubObject> list;
 
 }

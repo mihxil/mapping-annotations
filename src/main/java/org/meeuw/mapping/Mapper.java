@@ -1,6 +1,7 @@
 package org.meeuw.mapping;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
@@ -18,6 +19,12 @@ public class Mapper {
         // no instances
     }
 
+    public static Object map(Object source, Class<?> destinationClass) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        Object destination = destinationClass.getDeclaredConstructor().newInstance();
+        map(source, destination);
+        return destination;
+    }
+ 
 
     public static void map(Object source, Object destination) {
         Class<?> clazz = source.getClass();
@@ -28,28 +35,28 @@ public class Mapper {
  
     private static void getAndSet(Field destinationField, Class<?> sourceClass, Object source, Object destination) {
         Function<Object, Optional<Object>> getter = sourceGetter(destinationField, sourceClass);
+        
         Optional<Object> value = getter.apply(source);
-        value.ifPresentOrElse( v-> {
-            destinationSetter(destinationField, sourceClass).accept(destination, v);
-        }, () -> {
-                log.warn("No field found for {} ({}) {}", destinationField.getName(), getAllSourceAnnotations(destinationField),  sourceClass);
-        });
+        value.ifPresentOrElse( v-> 
+            destinationSetter(destinationField, sourceClass).accept(destination, v), 
+            () -> log.warn("No field found for {} ({}) {}", destinationField.getName(), getAllSourceAnnotations(destinationField),  sourceClass));
     }
 
 
-    private static final Map<Field, Map<Class<?>, Function<Object, Optional<Object>>>> getterCache = new ConcurrentHashMap<>();
+    private static final Map<Field, Map<Class<?>, Function<Object, Optional<Object>>>> GETTER_CACHE = new ConcurrentHashMap<>();
+    
     public static Function<Object, Optional<Object>> sourceGetter(Field f, Class<?> sourceClass) {
-        Map<Class<?>, Function<Object, Optional<Object>>> c = getterCache.computeIfAbsent(f, (fi) -> new ConcurrentHashMap<>());
+        Map<Class<?>, Function<Object, Optional<Object>>> c = GETTER_CACHE.computeIfAbsent(f, (fi) -> new ConcurrentHashMap<>());
         return c.computeIfAbsent(sourceClass, cl -> _sourceGetter(f, sourceClass));
 
     }
-    private static  Function<Object, Optional<Object>> _sourceGetter(Field f, Class<?> sourceClass) {
-        Optional<Source> annotation = getAnnotation(sourceClass, f);
+    private static  Function<Object, Optional<Object>> _sourceGetter(Field destinationField, Class<?> sourceClass) {
+        Optional<Source> annotation = getAnnotation(sourceClass, destinationField);
         if (annotation.isPresent()) {
             Source s = annotation.get();
             String sourceFieldName = s.field();
             if ("".equals(sourceFieldName)) {
-                sourceFieldName = f.getName();
+                sourceFieldName = destinationField.getName();
             }
             Optional<Field> sourceField = getSourceField(sourceClass, sourceFieldName);
             if (sourceField.isPresent()) {
@@ -65,13 +72,14 @@ public class Mapper {
         return s -> Optional.empty();
     }
 
-    private static final Map<Field, Map<Class<?>, BiConsumer<Object, Object>>> setterCache = new ConcurrentHashMap<>();
+    private static final Map<Field, Map<Class<?>, BiConsumer<Object, Object>>> SETTER_CACHE = new ConcurrentHashMap<>();
 
     private static  BiConsumer<Object, Object> destinationSetter(Field f, Class<?> sourceClass) {
-        Map<Class<?>, BiConsumer<Object, Object>> cache = setterCache.computeIfAbsent(f, fi -> new ConcurrentHashMap<>());
+        Map<Class<?>, BiConsumer<Object, Object>> cache = SETTER_CACHE.computeIfAbsent(f, fi -> new ConcurrentHashMap<>());
         return cache.computeIfAbsent(sourceClass, c -> _destinationSetter(f, c));
     }
-    private static <DESTINATION, SOURCE> BiConsumer<DESTINATION, Object> _destinationSetter(Field f, Class<SOURCE> sourceClass) {
+    
+    private static  BiConsumer<Object, Object> _destinationSetter(Field f, Class<?> sourceClass) {
         Optional<Source> annotation = getAnnotation(sourceClass, f);
         if (annotation.isPresent()) {
             Source s = annotation.get();
@@ -84,7 +92,7 @@ public class Mapper {
                 f.setAccessible(true);
                 return new BiConsumer<>() {
                     @Override
-                    public void accept(DESTINATION destination, Object o) {
+                    public void accept(Object destination, Object o) {
                         try {
                             f.set(destination, o);
                         } catch (Exception e) {
@@ -102,8 +110,12 @@ public class Mapper {
         if (sources != null) {
             return List.of(sources.value());
         }
-        return List.of(destField.getAnnotation(Source.class));
-        
+        Source source = destField.getAnnotation(Source.class);
+        if (source == null) {
+            return List.of();
+        } else {
+            return List.of(source);
+        }
         
     }
 }

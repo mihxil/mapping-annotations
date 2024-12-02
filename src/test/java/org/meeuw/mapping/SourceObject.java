@@ -7,4 +7,7 @@ public class SourceObject {
     String moreJson;
 
     String title;
+    
+        
+  
 }
