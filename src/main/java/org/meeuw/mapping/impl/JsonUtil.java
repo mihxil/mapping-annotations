@@ -42,7 +42,7 @@ public class JsonUtil {
         .jsonProvider(new JacksonJsonNodeJsonProvider(MAPPER))
         .build();
 
-    static Optional<Object> getSourceValue(Object source, Field destination, List<String> path, Class<?>... groups) {
+    static Optional<Object> getSourceValueFromJson(Object source, Field destination, List<String> path, Class<?>... groups) {
         Source annotation = getAnnotation(source.getClass(), destination, groups).orElseThrow();
         String field = annotation.field();
         if ("".equals(field)) {
@@ -51,7 +51,12 @@ public class JsonUtil {
         Field sourceField = Util.getSourceField(source.getClass(), field).orElseThrow();
         log.debug("Found source field {}", sourceField);
         
-        if (!"".equals(annotation.jsonPath())) {
+        return getSourceJsonValue(annotation, source, sourceField, destination);
+            
+    }
+    
+    public static Optional<Object> getSourceJsonValue(Source annotation, Object source, Field sourceField, Field destination) {
+           if (!"".equals(annotation.jsonPath())) {
             if (! "".equals(annotation.jsonPointer())) {
                 throw new IllegalStateException();
             }
@@ -61,11 +66,10 @@ public class JsonUtil {
             return getSourceJsonValueByPointer(source, sourceField, annotation.path(), annotation.jsonPointer())
                 .map(o -> unwrapJsonIfPossible(o, destination));
         }
-            
     }
 
 
-    public static Optional<Object> getSourceJsonValueByPointer(Object source, Field sourceField, String[] path, String pointer) {
+    private static Optional<Object> getSourceJsonValueByPointer(Object source, Field sourceField, String[] path, String pointer) {
 
          return getSourceJsonValue(source, sourceField, path)
              .map(jn -> {
@@ -76,7 +80,7 @@ public class JsonUtil {
              .map(JsonUtil::unwrapJson);
     }
     
-    public static Optional<Object> getSourceJsonValueByPath(Object source, Field sourceField, String[] path, String jsonPath) {
+    private static Optional<Object> getSourceJsonValueByPath(Object source, Field sourceField, String[] path, String jsonPath) {
 
          return getSourceJsonValue(source, sourceField, path)
              .map(jn -> {

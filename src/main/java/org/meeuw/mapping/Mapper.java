@@ -101,7 +101,7 @@ public class Mapper {
     private static Optional<Function<Object, Optional<Object>>> _sourceGetter(Field destinationField, Class<?> sourceClass, Class<?>... groups) {
         Optional<Source> annotation = getAnnotation(sourceClass, destinationField, groups);
         if (annotation.isPresent()) {
-            Source s = annotation.get();
+            final Source s = annotation.get();
             String sourceFieldName = s.field();
             if (isJsonField(sourceClass)) {
               return Optional.of(JsonUtil.valueFromJsonGetter(s));
@@ -111,16 +111,12 @@ public class Mapper {
             }
             Optional<Field> sourceField = getSourceField(sourceClass, sourceFieldName);
             if (sourceField.isPresent()) {
-                Field sf = sourceField.get();
+                final Field sf = sourceField.get();
                 
                 if ("".equals(s.jsonPointer()) && "".equals(s.jsonPath())) {
                     return Optional.of(source -> getSourceValue(source, sf, s.path()));
                 } else {
-                    if (! "".equals(s.jsonPath())) {
-                        return Optional.of(source -> JsonUtil.getSourceJsonValueByPath(source, sf, s.path(), s.jsonPath()));
-                    }  else {
-                        return Optional.of(source -> JsonUtil.getSourceJsonValueByPointer(source, sf, s.path(), s.jsonPointer()));
-                    }
+                    return Optional.of(source -> JsonUtil.getSourceJsonValue(s, source, sf, destinationField));
                 }
             }
         }

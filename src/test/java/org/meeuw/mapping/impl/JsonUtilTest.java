@@ -70,7 +70,7 @@ class JsonUtilTest {
         sourceObject.setJson("{'title': 'foobar'}".getBytes(StandardCharsets.UTF_8));
 
 
-        Optional<Object> title = JsonUtil.getSourceValue(sourceObject, Destination.class.getDeclaredField("title"), List.of());
+        Optional<Object> title = JsonUtil.getSourceValueFromJson(sourceObject, Destination.class.getDeclaredField("title"), List.of());
         assertThat(title).contains("foobar");
     }
     
@@ -120,7 +120,7 @@ class JsonUtilTest {
           """);
 
 
-        List<SubObject> list = (List<SubObject>) JsonUtil.getSourceValue(source, Destination.class.getDeclaredField("list"), List.of()).orElseThrow();
+        List<SubObject> list = (List<SubObject>) JsonUtil.getSourceValueFromJson(source, Destination.class.getDeclaredField("list"), List.of()).orElseThrow();
         
         assertThat(list).hasSize(2);
         
@@ -165,7 +165,7 @@ class JsonUtilTest {
 
         Object read = JsonPath.using(Configuration.builder().build()).parse(node).read("['nisv.currentbroadcaster'][*]['currentbroadcaster.broadcaster']");
 
-        List<SubObject> list2 = (List<SubObject>) JsonUtil.getSourceValue(source, Destination.class.getDeclaredField("list2"), List.of()).orElseThrow();
+        List<SubObject> list2 = (List<SubObject>) JsonUtil.getSourceValueFromJson(source, Destination.class.getDeclaredField("list2"), List.of()).orElseThrow();
            
         assertThat(list2).hasSize(2);
         
