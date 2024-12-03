@@ -90,7 +90,7 @@ public class Util {
         if (JsonNode.class.isAssignableFrom(clazz)) {
             return true;
         }
-        return true;
+        return false;
 
     }
 
