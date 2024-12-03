@@ -5,8 +5,12 @@ package org.meeuw.mapping.annotations;
 
 import java.lang.annotation.*;
 
+/**
+ * Just the wrapper annotation for {@link Source}. Can be implicit nowadays.
+ * Just add multiple {@link Source}s.
+ */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
+@Target({ElementType.FIELD, ElementType.TYPE_PARAMETER})
 public @interface Sources {
 
     Source[] value();

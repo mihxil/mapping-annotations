@@ -8,9 +8,12 @@ import java.lang.annotation.*;
 /**
  * This annotation can be put on a field of some destination object, to indicate
  * from which other object's field it must come.
+ *
+ * @author Michiel Meeuwissen
+ * @since 0.1
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
+@Target({ElementType.FIELD, ElementType.TYPE_PARAMETER})
 @Repeatable(Sources.class)
 public @interface Source {
 
@@ -23,10 +26,22 @@ public @interface Source {
 
 
     /**
-     * Name of the field in the source class
+     * Name of the field in the source class, if not specified this means either
+     * 1. The source field has the same name as the name of the field in the destination
+     * 2. The source has become some json object and is not any more associated with a concrete field
+     * (an example to explain this would probably be welcome)
      */
     String field() default "";
-    
+
+    /**
+     * If specified, a json pointer inside the other field.
+     */
+    String pointer() default "";
+
+
+    /**
+     * 'Deeper' values can be addresses via a path of more fields.
+     */
     String[] path() default {};
 
     /**
@@ -37,7 +52,7 @@ public @interface Source {
      * matches the actual class of the source object will be used then.
      */
     Class<?> sourceClass() default Object.class;
-    
+
     Class<?>[] groups() default {};
 
 }
