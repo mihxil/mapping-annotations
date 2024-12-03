@@ -94,7 +94,7 @@ public class JsonUtil {
 
     // jsonpath would have its own cache, but it may be used by other
     // stuff. Since we know that there is a limited number of JsonPath object caused by us, we just use our hown cache, without any limitations.
-    private static Map<String, JsonPath> JSONPATH_CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, JsonPath> JSONPATH_CACHE = new ConcurrentHashMap<>();
     private static Optional<Object> getSourceJsonValueByPath(Object source, Field sourceField, String[] path, String jsonPath) {
 
          return getSourceJsonValue(source, sourceField, path)
@@ -188,7 +188,7 @@ public class JsonUtil {
 
     static Object unwrapJson(JsonNode jsonNode) {
         if (jsonNode.isMissingNode()) {
-            log.warn("Missing node!");
+            log.debug("Missing node!");
             return null;
         }
         if (jsonNode.isNull()) {

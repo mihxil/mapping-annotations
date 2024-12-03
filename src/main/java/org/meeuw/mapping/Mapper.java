@@ -79,7 +79,7 @@ public class Mapper {
             Optional<Object> value = getter.get().apply(source);
             value.ifPresentOrElse(v ->
                     destinationSetter(destinationField, sourceClass).accept(destination, v),
-                () -> log.warn("No field found for {} ({}) {}", destinationField.getName(), getAllSourceAnnotations(destinationField), sourceClass));
+                () -> log.debug("No field found for {} ({}) {}", destinationField.getName(), getAllSourceAnnotations(destinationField), sourceClass));
         } else {
             log.debug("Ignored destination field {} (No (matching) @Source annotation for {})", destinationField, sourceClass);
         }
