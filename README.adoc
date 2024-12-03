@@ -77,7 +77,7 @@ With
     protected String name;
     ..
 ----
-
+This also demonstrates that if the jsonPath/jsonPointer points to a JsonNode, that it can and will be implicitly converted further.
 
 
 == Java records[[java_records]]
@@ -144,6 +144,6 @@ https://github.com/mihxil/modelmapper-json-source-annotation[This was however my
 
 == TODO
 
-- Automatic mapping subtypes?
-- Instantiating?
+- Automatic mapping subtypes? (kinda done)
+- Instantiating? (done with just default contructor)
 - Implicit scalar-mapping (may be we can profit from spring conversion? from model mapper?)
