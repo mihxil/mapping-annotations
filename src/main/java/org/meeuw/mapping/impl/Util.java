@@ -18,14 +18,14 @@ public class Util {
         // no instances allowed
     }
 
-    public static Map<String, Field> getMappedDestinationProperties(Class<?> sourceClass, Class<?> destinationClass) {
+    public static Map<String, Field> getMappedDestinationProperties(Class<?> sourceClass, Class<?> destinationClass, Class<?>... groups) {
         Map<String, Field> result = new HashMap<>();
         Class<?> superClass = sourceClass.getSuperclass();
         if (superClass != null) {
             result.putAll(getMappedDestinationProperties(superClass, destinationClass));
         }
         for (Field field : destinationClass.getDeclaredFields()) {
-            getAnnotation(sourceClass, field)
+            getAnnotation(sourceClass, field, groups)
                 .ifPresent(a -> {
                     result.put(field.getName(), field);
                 });
@@ -35,11 +35,11 @@ public class Util {
     }
 
 
-    public static Optional<Source> getAnnotation(Class<?> sourceClass, Field destinationField) {
+    public static Optional<Source> getAnnotation(Class<?> sourceClass, Field destinationField, Class<?>... groups) {
         destinationField =  associatedBuilderField(destinationField).orElse(destinationField);
         Source s = null;
         for (Source proposal : getAllSourceAnnotations(destinationField)) {
-            if (matches(proposal, sourceClass, destinationField.getName())) {
+            if (matches(proposal, sourceClass, destinationField.getName(), groups)) {
                 if (s == null) {
                     s = proposal;
                 } else {
@@ -95,9 +95,24 @@ public class Util {
     }
 
 
-    private static boolean matches(Source source, Class<?> sourceClass, String destinationField) {
+    private static boolean matches(Source source, Class<?> sourceClass, String destinationField, Class<?>... groups) {
         if (source == null) {
             return false;
+        }
+        if (source.groups().length > 0 && groups.length > 0) {
+            boolean foundMatch = false;
+            OUTER:
+            for (Class<?> group : source.groups()) {
+                for (Class<?> groupOfSource : source.groups()) {
+                    if (group.isAssignableFrom(groupOfSource)) {
+                        foundMatch = true;
+                        break OUTER;
+                    }
+                }
+            }
+            if (!foundMatch) {
+               return false; 
+            }
         }
         String field = source.field();
 

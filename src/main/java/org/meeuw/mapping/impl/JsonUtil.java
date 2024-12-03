@@ -4,6 +4,10 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
+import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import java.io.IOException;
 import java.lang.reflect.*;
 import java.util.*;
@@ -16,6 +20,8 @@ import static org.meeuw.mapping.impl.Util.getAnnotation;
 
 @Slf4j
 public class JsonUtil {
+    
+   
 
     private JsonUtil() {
         // no instances
@@ -31,26 +37,51 @@ public class JsonUtil {
         MAPPER.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
     }
 
+    private static final Configuration JSONPATHCONFIGURATION = Configuration.builder()
+        .mappingProvider(new JacksonMappingProvider(MAPPER))
+        .jsonProvider(new JacksonJsonNodeJsonProvider(MAPPER))
+        .build();
 
-
-    static Optional<Object> getSourceValue(Object source, Field destination, String... path) {
-        Source annotation = getAnnotation(source.getClass(), destination).orElseThrow();
+    static Optional<Object> getSourceValue(Object source, Field destination, List<String> path, Class<?>... groups) {
+        Source annotation = getAnnotation(source.getClass(), destination, groups).orElseThrow();
         String field = annotation.field();
         if ("".equals(field)) {
             field = destination.getName();
         } 
-        Field f = Util.getSourceField(source.getClass(), field).orElseThrow();
-        return getSourceJsonValue(source, f, annotation.path(), annotation.pointer())
-            .map(o -> unwrapJsonIfPossible(o, destination));
+        Field sourceField = Util.getSourceField(source.getClass(), field).orElseThrow();
+        log.debug("Found source field {}", sourceField);
+        
+        if (!"".equals(annotation.jsonPath())) {
+            if (! "".equals(annotation.jsonPointer())) {
+                throw new IllegalStateException();
+            }
+            return getSourceJsonValueByPath(source, sourceField, annotation.path(), annotation.jsonPath())
+                .map(o -> unwrapJsonIfPossible(o, destination));
+        } else {
+            return getSourceJsonValueByPointer(source, sourceField, annotation.path(), annotation.jsonPointer())
+                .map(o -> unwrapJsonIfPossible(o, destination));
+        }
             
     }
 
 
-    public static Optional<Object> getSourceJsonValue(Object source, Field sourceField, String[] path, String pointer) {
+    public static Optional<Object> getSourceJsonValueByPointer(Object source, Field sourceField, String[] path, String pointer) {
 
          return getSourceJsonValue(source, sourceField, path)
-             .map(jn -> jn.at(pointer))
-            
+             .map(jn -> {
+                 JsonNode at = jn.at(pointer);
+                 
+                 return at;
+             })
+             .map(JsonUtil::unwrapJson);
+    }
+    
+    public static Optional<Object> getSourceJsonValueByPath(Object source, Field sourceField, String[] path, String jsonPath) {
+
+         return getSourceJsonValue(source, sourceField, path)
+             .map(jn -> {
+                 return (JsonNode) JsonPath.using(JSONPATHCONFIGURATION).parse(jn).read(jsonPath);
+             })
              .map(JsonUtil::unwrapJson);
     }
 
@@ -117,15 +148,19 @@ public class JsonUtil {
        final UnaryOperator<JsonNode> finalWithFieldAndPath = withField;
        return o -> {
            JsonNode value = finalWithFieldAndPath.apply((JsonNode) o);
-           if ("".equals(s.pointer())) {
+           if ("".equals(s.jsonPointer())) {
                return Optional.ofNullable(unwrapJson(value));
            } else {
-               return Optional.ofNullable(unwrapJson(value.at(s.pointer())));
+               return Optional.ofNullable(unwrapJson(value.at(s.jsonPointer())));
            }
        };
    }
 
     static Object unwrapJson(JsonNode jsonNode) {
+        if (jsonNode.isMissingNode()) {
+            log.warn("Missing node!");
+            return null;
+        }
         if (jsonNode.isNull()) {
             return null;
         }

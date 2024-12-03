@@ -8,8 +8,8 @@
   </Appenders>
   <Loggers>
 
-    <Root level="INFO">
-      <AppenderRef ref="console" level="INFO"/>
+    <Root level="DEBUG">
+      <AppenderRef ref="console" level="DEBUG"/>
     </Root>
   </Loggers>
 </Configuration>

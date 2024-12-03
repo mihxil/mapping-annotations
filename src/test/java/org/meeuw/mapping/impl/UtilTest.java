@@ -43,7 +43,7 @@ class UtilTest {
     @Test
     void withPath() {
         ExtendedSourceObject source = new ExtendedSourceObject();
-        source.setSubObject(new SubObject(null, 123L));
+        source.setSubObject(new SubObject(null, null, 123L));
 
 
         Optional<Object> id = Util.getSourceValue(source, "subObject", "id");

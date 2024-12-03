@@ -27,11 +27,11 @@ public class Mapper {
      * Creates a new instance (using the no-args constructor) and copies all {@link Source} annotated fields (that match) from source to it.
      * @param source The source object copy data from
      * @param destinationClass The class to create a destination object for
-     * @see #map(Object, Object)
+     * @see #map(Object, Object, Class...)
      */
-    public static Object map(Object source, Class<?> destinationClass) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    public static Object map(Object source, Class<?> destinationClass, Class<?>... groups) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         Object destination = destinationClass.getDeclaredConstructor().newInstance();
-        map(source, destination);
+        map(source, destination, groups);
         return destination;
     }
 
@@ -40,22 +40,22 @@ public class Mapper {
      * @param source The source object
      * @param destination The destination object
      */
-    public static void map(Object source, Object destination) {
-        map(source, destination, destination.getClass());
+    public static void map(Object source, Object destination, Class<?>... groups) {
+        map(source, destination, destination.getClass(), groups);
     }
 
     /**
-     * Helper class for {@link #map(Object, Object)}, recursively called for the class and superclass of the destination
+     * Helper class for {@link #map(Object, Object, Class...)}, recursively called for the class and superclass of the destination
      * object.
      */
-    private static void map(Object source, Object destination, Class<?> forClass) {
+    private static void map(Object source, Object destination, Class<?> forClass, Class<?>... groups) {
         Class<?> sourceClass = source.getClass();
         Class<?> superClass = forClass.getSuperclass();
         if (superClass != null) {
-            map(source, destination, superClass);
+            map(source, destination, superClass, groups);
         }
         for (Field f: forClass.getDeclaredFields()) {
-            getAndSet(f, sourceClass, source, destination);
+            getAndSet(f, sourceClass, source, destination, groups);
         }
     }
 
@@ -67,24 +67,30 @@ public class Mapper {
     private static void getAndSet(
         Field destinationField,
         Class<?> sourceClass,
-        Object source, Object destination) {
-        Function<Object, Optional<Object>> getter = sourceGetter(destinationField, sourceClass);
-        
-        Optional<Object> value = getter.apply(source);
-        value.ifPresentOrElse( v-> 
-            destinationSetter(destinationField, sourceClass).accept(destination, v), 
-            () -> log.warn("No field found for {} ({}) {}", destinationField.getName(), getAllSourceAnnotations(destinationField),  sourceClass));
+        Object source, 
+        Object destination,
+        Class<?>... groups) {
+        Optional<Function<Object, Optional<Object>>> getter = sourceGetter(destinationField, sourceClass, groups);
+
+        if (getter.isPresent()) {
+            Optional<Object> value = getter.get().apply(source);
+            value.ifPresentOrElse(v ->
+                    destinationSetter(destinationField, sourceClass).accept(destination, v),
+                () -> log.warn("No field found for {} ({}) {}", destinationField.getName(), getAllSourceAnnotations(destinationField), sourceClass));
+        } else {
+            log.debug("Ignored destination field {} (No (matching) @Source annotation for {})", destinationField, sourceClass);
+        }
     }
 
 
-    private static final Map<Field, Map<Class<?>, Function<Object, Optional<Object>>>> GETTER_CACHE = new ConcurrentHashMap<>();
+    private static final Map<Field, Map<Class<?>, Optional<Function<Object, Optional<Object>>>>> GETTER_CACHE = new ConcurrentHashMap<>();
 
     /**
      * Return a function that will using reflection get the value from a source object that maps to the destination field.
      *
      */
-    public static Function<Object, Optional<Object>> sourceGetter(Field destinationField, Class<?> sourceClass) {
-        Map<Class<?>, Function<Object, Optional<Object>>> c = GETTER_CACHE.computeIfAbsent(destinationField, (fi) -> new ConcurrentHashMap<>());
+    public static Optional<Function<Object, Optional<Object>>> sourceGetter(Field destinationField, Class<?> sourceClass, Class<?>... groups) {
+        Map<Class<?>, Optional<Function<Object, Optional<Object>>>> c = GETTER_CACHE.computeIfAbsent(destinationField, (fi) -> new ConcurrentHashMap<>());
         return c.computeIfAbsent(sourceClass, cl -> _sourceGetter(destinationField, sourceClass));
 
     }
@@ -92,13 +98,13 @@ public class Mapper {
     /**
      * Uncached version of {@link #sourceGetter(Field, Class)}
      */
-    private static  Function<Object, Optional<Object>> _sourceGetter(Field destinationField, Class<?> sourceClass) {
-        Optional<Source> annotation = getAnnotation(sourceClass, destinationField);
+    private static Optional<Function<Object, Optional<Object>>> _sourceGetter(Field destinationField, Class<?> sourceClass, Class<?>... groups) {
+        Optional<Source> annotation = getAnnotation(sourceClass, destinationField, groups);
         if (annotation.isPresent()) {
             Source s = annotation.get();
             String sourceFieldName = s.field();
             if (isJsonField(sourceClass)) {
-              return JsonUtil.valueFromJsonGetter(s);
+              return Optional.of(JsonUtil.valueFromJsonGetter(s));
             }
             if ("".equals(sourceFieldName)) {
                 sourceFieldName = destinationField.getName();
@@ -106,15 +112,19 @@ public class Mapper {
             Optional<Field> sourceField = getSourceField(sourceClass, sourceFieldName);
             if (sourceField.isPresent()) {
                 Field sf = sourceField.get();
-
-                if ("".equals(s.pointer())) {
-                    return source -> getSourceValue(source, sf, s.path());
+                
+                if ("".equals(s.jsonPointer()) && "".equals(s.jsonPath())) {
+                    return Optional.of(source -> getSourceValue(source, sf, s.path()));
                 } else {
-                    return source -> JsonUtil.getSourceJsonValue(source,  sf, s.path(), s.pointer());
+                    if (! "".equals(s.jsonPath())) {
+                        return Optional.of(source -> JsonUtil.getSourceJsonValueByPath(source, sf, s.path(), s.jsonPath()));
+                    }  else {
+                        return Optional.of(source -> JsonUtil.getSourceJsonValueByPointer(source, sf, s.path(), s.jsonPointer()));
+                    }
                 }
             }
         }
-        return s -> Optional.empty();
+        return Optional.empty();
     }
 
     private static final Map<Field, Map<Class<?>, BiConsumer<Object, Object>>> SETTER_CACHE = new ConcurrentHashMap<>();
@@ -158,7 +168,7 @@ public class Mapper {
                     try {
                         f.set(destination, o);
                     } catch (Exception e) {
-                        log.warn("When setting {} in {}: {}", o, f, e.getMessage());
+                        log.warn("When setting '{}' in {}: {}", o, f, e.getMessage());
                     }
                 };
             }

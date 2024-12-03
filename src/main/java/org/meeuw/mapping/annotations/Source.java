@@ -15,10 +15,11 @@ import java.lang.annotation.*;
 public @interface Source {
 
     /**
-     * Json pointer inside the other field. If not specified, it may be the entire field
+     * Json path inside the other field. If not specified, it may be the entire field
      */
-    String pointer() default "";
+    String jsonPath() default "";
 
+    String jsonPointer() default "";
 
 
     /**
@@ -36,5 +37,7 @@ public @interface Source {
      * matches the actual class of the source object will be used then.
      */
     Class<?> sourceClass() default Object.class;
+    
+    Class<?>[] groups() default {};
 
 }

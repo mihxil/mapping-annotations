@@ -13,12 +13,12 @@ public class Destination {
 
     }
     
-    @Source(field = "anotherJson", pointer ="/title") // doesn't exist in SourceObject
-    @Source(field = "json", pointer ="/title", sourceClass = SourceObject.class)
+    @Source(field = "anotherJson", jsonPointer ="/title") // doesn't exist in SourceObject
+    @Source(field = "json", jsonPointer ="/title", sourceClass = SourceObject.class)
     String title;
 
 
-    @Source(field = "moreJson", pointer ="/a/b/value")
+    @Source(field = "moreJson", jsonPointer ="/a/b/value")
     String description;
 
     @Source()
@@ -27,7 +27,11 @@ public class Destination {
     @Source(field = "subObject", path="id", sourceClass = ExtendedSourceObject.class)
     Long id;
     
-    @Source(field = "moreJson", pointer ="/nisv.currentbroadcaster")
+    @Source(field = "moreJson", jsonPointer ="/nisv.currentbroadcaster", groups = Test1Class.class)
     List<SubObject> list;
+    
+    @Source(field = "moreJson", jsonPath ="['nisv.currentbroadcaster'][*]['currentbroadcaster.broadcaster']", groups = Test2Class.class)
+    List<SubObject> list2;
+
 
 }
