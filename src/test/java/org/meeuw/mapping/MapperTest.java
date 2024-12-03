@@ -68,4 +68,24 @@ class MapperTest {
     }
 
 
+
+   @Test
+   void getMappedDestinationProperties() {
+       assertThat(Mapper.getMappedDestinationProperties(
+           ExtendedSourceObject.class,
+           Destination.class
+       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "id", "list", "list2");
+
+       assertThat(Mapper.getMappedDestinationProperties(
+           SourceObject.class,
+           Destination.class
+       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "list", "list2");
+   }
+
+    @Test
+    void getMappedDestinationProperties2() {
+        assertThat(Mapper.getMappedDestinationProperties(AnotherSource.class , Destination.class).keySet()).containsExactlyInAnyOrder("title");
+    }
+
+
 }

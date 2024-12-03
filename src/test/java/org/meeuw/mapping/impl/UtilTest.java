@@ -51,23 +51,5 @@ class UtilTest {
     }
 
 
-   @Test
-   void getMappedDestinationProperties() {
-       assertThat(Util.getMappedDestinationProperties(
-           ExtendedSourceObject.class,
-           Destination.class
-       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "id", "list", "list2");
-
-       assertThat(Util.getMappedDestinationProperties(
-           SourceObject.class,
-           Destination.class
-       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "list", "list2");
-   }
-
-    @Test
-    void getMappedDestinationProperties2() {
-        assertThat(Util.getMappedDestinationProperties(AnotherSource.class , Destination.class).keySet()).containsExactlyInAnyOrder("title");
-    }
-
 
 }
