@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2024 Licensed under the Apache License, Version 2.0
+ */
 package org.meeuw.mapping.impl;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -11,6 +14,7 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import java.io.IOException;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import lombok.extern.slf4j.Slf4j;
@@ -18,15 +22,22 @@ import org.meeuw.mapping.Mapper;
 import org.meeuw.mapping.annotations.Source;
 import static org.meeuw.mapping.impl.Util.getAnnotation;
 
+/**
+ * Mapping supports also picking up fields from fields that contain json.
+ * This class contains related to that.
+ *
+ * @author Michiel Meeuwissen
+ * @since 0.1
+ */
 @Slf4j
 public class JsonUtil {
-    
-   
+
+
 
     private JsonUtil() {
         // no instances
     }
-      /**
+    /**
      * Lenient json mapper
      */
     static final ObjectMapper MAPPER = new ObjectMapper();
@@ -37,9 +48,10 @@ public class JsonUtil {
         MAPPER.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true);
     }
 
-    private static final Configuration JSONPATHCONFIGURATION = Configuration.builder()
+    private static final Configuration JSONPATH_CONFIGURATION = Configuration.builder()
         .mappingProvider(new JacksonMappingProvider(MAPPER))
         .jsonProvider(new JacksonJsonNodeJsonProvider(MAPPER))
+
         .build();
 
     static Optional<Object> getSourceValueFromJson(Object source, Field destination, List<String> path, Class<?>... groups) {
@@ -50,11 +62,11 @@ public class JsonUtil {
         } 
         Field sourceField = Util.getSourceField(source.getClass(), field).orElseThrow();
         log.debug("Found source field {}", sourceField);
-        
+
         return getSourceJsonValue(annotation, source, sourceField, destination);
-            
+
     }
-    
+
     public static Optional<Object> getSourceJsonValue(Source annotation, Object source, Field sourceField, Field destination) {
            if (!"".equals(annotation.jsonPath())) {
             if (! "".equals(annotation.jsonPointer())) {
@@ -74,17 +86,21 @@ public class JsonUtil {
          return getSourceJsonValue(source, sourceField, path)
              .map(jn -> {
                  JsonNode at = jn.at(pointer);
-                 
+
                  return at;
              })
              .map(JsonUtil::unwrapJson);
     }
-    
+
+    // jsonpath would have its own cache, but it may be used by other
+    // stuff. Since we know that there is a limited number of JsonPath object caused by us, we just use our hown cache, without any limitations.
+    private static Map<String, JsonPath> JSONPATH_CACHE = new ConcurrentHashMap<>();
     private static Optional<Object> getSourceJsonValueByPath(Object source, Field sourceField, String[] path, String jsonPath) {
 
          return getSourceJsonValue(source, sourceField, path)
              .map(jn -> {
-                 return (JsonNode) JsonPath.using(JSONPATHCONFIGURATION).parse(jn).read(jsonPath);
+                 return (JsonNode) JsonPath.using(JSONPATH_CONFIGURATION).parse(jn).read(JSONPATH_CACHE.computeIfAbsent(jsonPath,
+                     JsonPath::compile));
              })
              .map(JsonUtil::unwrapJson);
     }
@@ -150,14 +166,24 @@ public class JsonUtil {
            withField = o -> prev.apply(o).get(p);
        }
        final UnaryOperator<JsonNode> finalWithFieldAndPath = withField;
-       return o -> {
-           JsonNode value = finalWithFieldAndPath.apply((JsonNode) o);
-           if ("".equals(s.jsonPointer())) {
+       if ("".equals(s.jsonPointer()) && "".equals(s.jsonPath())) {
+           return o -> {
+               JsonNode value = finalWithFieldAndPath.apply((JsonNode) o);
                return Optional.ofNullable(unwrapJson(value));
-           } else {
+           };
+       } else if (! "".equals(s.jsonPointer())) {
+           return o -> {
+               JsonNode value = finalWithFieldAndPath.apply((JsonNode) o);
                return Optional.ofNullable(unwrapJson(value.at(s.jsonPointer())));
-           }
-       };
+           };
+       } else {
+            return o -> {
+               JsonNode value = finalWithFieldAndPath.apply((JsonNode) o);
+               return Optional.ofNullable(unwrapJson(
+                   JsonPath.using(JSONPATH_CONFIGURATION)
+                       .parse(value).read(JSONPATH_CACHE.computeIfAbsent(s.jsonPath(), JsonPath::compile))));
+           };
+       }
    }
 
     static Object unwrapJson(JsonNode jsonNode) {

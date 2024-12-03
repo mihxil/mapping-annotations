@@ -45,7 +45,7 @@ class MapperTest {
             Destination destination = new Destination();
             ExtendedSourceObject sourceObject = new ExtendedSourceObject();
             sourceObject.setTitle("foobar");
-            sourceObject.setSubObject(new SubObject("a", 1L));
+            sourceObject.setSubObject(new SubObject("a", null, 1L ));
             sourceObject.setMoreJson("""
             {"title": "foobar"}
             """

@@ -85,8 +85,7 @@ class JsonUtilTest {
                             "value": "209345",
                               "origin": "https://lab-vapp-bng-01.mam.beeldengeluid.nl/api/metadata/thesaurus/~THE30/209345",
                               "resolved_value": "VPRO"
-                            }
-                        
+                            }                        
           }
           """);
         Mapper.map(node, subObject);
@@ -125,11 +124,6 @@ class JsonUtilTest {
         assertThat(list).hasSize(2);
         
         assertThat(list.get(0).getBroadcaster()).isEqualTo("VPRO");
-           
-        
-        
-           
-        
         
     }
     
@@ -162,8 +156,6 @@ class JsonUtilTest {
                    
 
         MappingProvider mappingProvider = new JacksonMappingProvider();
-
-        Object read = JsonPath.using(Configuration.builder().build()).parse(node).read("['nisv.currentbroadcaster'][*]['currentbroadcaster.broadcaster']");
 
         List<SubObject> list2 = (List<SubObject>) JsonUtil.getSourceValueFromJson(source, Destination.class.getDeclaredField("list2"), List.of()).orElseThrow();
            
