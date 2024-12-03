@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2024 Licensed under the Apache License, Version 2.0
+ */
 package org.meeuw.mapping;
 
 import java.lang.reflect.Field;

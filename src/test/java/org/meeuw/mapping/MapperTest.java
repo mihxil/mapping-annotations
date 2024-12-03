@@ -43,7 +43,10 @@ class MapperTest {
         Instant start = Instant.now();
         for (int i = 0; i < 1_000_000; i++) {
             Destination destination = new Destination();
-            AnotherSource sourceObject = AnotherSource.of("""
+            ExtendedSourceObject sourceObject = new ExtendedSourceObject();
+            sourceObject.setTitle("foobar");
+            sourceObject.setSubObject(new SubObject("a", 1L));
+            sourceObject.setMoreJson("""
             {"title": "foobar"}
             """
             );
