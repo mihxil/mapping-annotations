@@ -58,6 +58,9 @@ public class Mapper {
 
     /**
      * Given a {@code sourceClass} and a {@code destinationClass} will indicate which fields  (in the destination) will be mapped.
+     * @param sourceClass Class of a source object
+     * @param destinationClass Class of a destination object
+     * @param groups If not empty, only mapping is done if one (or more) of the given groups matches one of the groups of the source annotations.
      */
     public static Map<String, Field> getMappedDestinationProperties(Class<?> sourceClass, Class<?> destinationClass, Class<?>... groups) {
         Map<String, Field> result = new HashMap<>();
@@ -76,6 +79,9 @@ public class Mapper {
 
     /**
      * Returns a function that will use reflection get the value from a source object that maps to the destination field.
+     * @param destinationField Field of the destination
+     * @param sourceClass Class of a source object
+     * @param groups If not empty, only mapping is done if one (or more) of the given groups matches one of the groups of the source annotations.
      */
     public static Optional<Function<Object, Optional<Object>>> sourceGetter(Field destinationField, Class<?> sourceClass, Class<?>... groups) {
         Map<Class<?>, Optional<Function<Object, Optional<Object>>>> c = GETTER_CACHE.computeIfAbsent(destinationField, (fi) -> new ConcurrentHashMap<>());
