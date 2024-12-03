@@ -5,8 +5,7 @@ package org.meeuw.mapping;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -58,6 +57,38 @@ public class Mapper {
     }
 
     /**
+     * Given a {@code sourceClass} and a {@code destinationClass} will indicate which fields  (in the destination) will be mapped.
+     */
+    public static Map<String, Field> getMappedDestinationProperties(Class<?> sourceClass, Class<?> destinationClass, Class<?>... groups) {
+        Map<String, Field> result = new HashMap<>();
+        Class<?> superClass = sourceClass.getSuperclass();
+        if (superClass != null) {
+            result.putAll(getMappedDestinationProperties(superClass, destinationClass));
+        }
+        for (Field field : destinationClass.getDeclaredFields()) {
+            getAnnotation(sourceClass, field, groups)
+                .ifPresent(a -> {
+                    result.put(field.getName(), field);
+                });
+        }
+        return Collections.unmodifiableMap(result);
+    }
+
+    /**
+     * Returns a function that will use reflection get the value from a source object that maps to the destination field.
+     */
+    public static Optional<Function<Object, Optional<Object>>> sourceGetter(Field destinationField, Class<?> sourceClass, Class<?>... groups) {
+        Map<Class<?>, Optional<Function<Object, Optional<Object>>>> c = GETTER_CACHE.computeIfAbsent(destinationField, (fi) -> new ConcurrentHashMap<>());
+        return c.computeIfAbsent(sourceClass, cl -> _sourceGetter(destinationField, sourceClass));
+
+    }
+
+
+
+
+    ///  PRIVATE METHODS
+
+    /**
      * Helper class for {@link #map(Object, Object, Class...)}, recursively called for the class and superclass of the destination
      * object.
      */
@@ -98,15 +129,7 @@ public class Mapper {
 
     private static final Map<Field, Map<Class<?>, Optional<Function<Object, Optional<Object>>>>> GETTER_CACHE = new ConcurrentHashMap<>();
 
-    /**
-     * Return a function that will using reflection get the value from a source object that maps to the destination field.
-     *
-     */
-    private static Optional<Function<Object, Optional<Object>>> sourceGetter(Field destinationField, Class<?> sourceClass, Class<?>... groups) {
-        Map<Class<?>, Optional<Function<Object, Optional<Object>>>> c = GETTER_CACHE.computeIfAbsent(destinationField, (fi) -> new ConcurrentHashMap<>());
-        return c.computeIfAbsent(sourceClass, cl -> _sourceGetter(destinationField, sourceClass));
 
-    }
 
     /**
      * Uncached version of {@link #sourceGetter(Field, Class, Class[])}

@@ -24,21 +24,6 @@ public class Util {
         // no instances allowed
     }
 
-    public static Map<String, Field> getMappedDestinationProperties(Class<?> sourceClass, Class<?> destinationClass, Class<?>... groups) {
-        Map<String, Field> result = new HashMap<>();
-        Class<?> superClass = sourceClass.getSuperclass();
-        if (superClass != null) {
-            result.putAll(getMappedDestinationProperties(superClass, destinationClass));
-        }
-        for (Field field : destinationClass.getDeclaredFields()) {
-            getAnnotation(sourceClass, field, groups)
-                .ifPresent(a -> {
-                    result.put(field.getName(), field);
-                });
-        }
-        return Collections.unmodifiableMap(result);
-
-    }
 
 
     public static Optional<Source> getAnnotation(Class<?> sourceClass, Field destinationField, Class<?>... groups) {
