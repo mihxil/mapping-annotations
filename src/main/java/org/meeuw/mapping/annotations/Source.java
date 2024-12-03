@@ -19,9 +19,15 @@ public @interface Source {
 
     /**
      * Json path inside the other field. If not specified, it may be the entire field
+     * Requires jways
+     * @since 0.2
      */
     String jsonPath() default "";
 
+    /**
+     * Json path inside the other field. If not specified, it may be the entire field
+     * @since 0.2
+     */
     String jsonPointer() default "";
 
 
@@ -32,11 +38,6 @@ public @interface Source {
      * (an example to explain this would probably be welcome)
      */
     String field() default "";
-
-    /**
-     * If specified, a json pointer inside the other field.
-     */
-    String pointer() default "";
 
 
     /**
@@ -52,6 +53,16 @@ public @interface Source {
      * matches the actual class of the source object will be used then.
      */
     Class<?> sourceClass() default Object.class;
+
+
+    /**
+     * Similar to 'groups' in jakarta.validation. The idea is that certain mappings can be disabled/enabled
+     * but specifying groups.
+     *
+     * EXPERIMENTAL
+     * @since 0.2
+     *
+     */
 
     Class<?>[] groups() default {};
 
