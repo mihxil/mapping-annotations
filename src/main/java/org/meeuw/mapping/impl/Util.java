@@ -11,6 +11,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.meeuw.mapping.annotations.Source;
 import org.meeuw.mapping.annotations.Sources;
 
+/**
+ * Contains methods performing the reflection and caching needed to implement {@link org.meeuw.mapping.Mapper}, and {@link Source} annotations
+ *
+ * @author Michiel Meeuwissen
+ * @since 0.1
+ */
 @Slf4j
 public class Util {
 
