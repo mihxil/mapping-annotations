@@ -56,10 +56,29 @@ It is also possible to pick up values from a field containing json
 ----
 class DestinationObject {
     ...
-    @Source(field = "json", pointer="/title") // This field is sourced by the json field 'title' within a field 'json' in the source object
+    @Source(field = "json", jsonPointer="/title") // This field is sourced by the json field 'title' within a field 'json' in the source object
     String title;
 }
 ----
+For more sophisticated cases it can also be done with jsonpath
+
+[source, java]
+----
+ 
+    @Source(sourceClass = AggregatedMetadata.class, field = "payload", jsonPath = "['nisv.currentbroadcaster'][*]['currentbroadcaster.broadcaster']")
+    protected List<EntityMetadata> broadcasters;
+----
+
+With
+[source, java]
+----
+ public class EntityMetaData {
+    @Source(jsonPointer = "/resolved_value", sourceClass = JsonNode.class)
+    protected String name;
+    ..
+----
+
+
 
 == Java records[[java_records]]
 
