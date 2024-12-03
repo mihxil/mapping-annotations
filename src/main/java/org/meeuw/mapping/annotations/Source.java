@@ -21,12 +21,14 @@ public @interface Source {
      * Json path inside the other field. If not specified, it may be the entire field
      * Requires jways
      * @since 0.2
+     * @return a json path e.g. {@code title.value}
      */
     String jsonPath() default "";
 
     /**
-     * Json path inside the other field. If not specified, it may be the entire field
+     * Json pointer inside the other field.
      * @since 0.2
+     * @return a json pointer. E.g. {@code /title/value}
      */
     String jsonPointer() default "";
 
@@ -36,12 +38,14 @@ public @interface Source {
      * 1. The source field has the same name as the name of the field in the destination
      * 2. The source has become some json object and is not any more associated with a concrete field
      * (an example to explain this would probably be welcome)
+     * @return The name of the field in the source class
      */
     String field() default "";
 
 
     /**
      * 'Deeper' values can be addresses via a path of more fields.
+     * @return An array of field names in sub objects
      */
     String[] path() default {};
 
@@ -51,6 +55,7 @@ public @interface Source {
      * Optional, normally just in the source class of the source object
      * But multiple source annotations can be present, and the one where the sourceClass
      * matches the actual class of the source object will be used then.
+     * @return a class which match on the actual type of the source object
      */
     Class<?> sourceClass() default Object.class;
 
@@ -61,7 +66,7 @@ public @interface Source {
      *
      * EXPERIMENTAL
      * @since 0.2
-     *
+     * @return an array of classes, of which at least one {@link Class#isAssignableFrom(Class) is assignable from} one of the incoming groups.
      */
 
     Class<?>[] groups() default {};

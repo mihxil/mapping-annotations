@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import lombok.extern.slf4j.Slf4j;
+import org.meeuw.mapping.MapException;
 import static org.meeuw.mapping.Mapper.map;
 import org.meeuw.mapping.annotations.Source;
 import static org.meeuw.mapping.impl.Util.getAnnotation;
@@ -123,9 +124,8 @@ public class JsonUtil {
                         .map(o -> {
                                 try {
                                     return map(o, genericClass);
-                                } catch (NoSuchMethodException | InvocationTargetException | InstantiationException |
-                                         IllegalAccessException e) {
-                                    log.warn(e.getMessage(), e);
+                                } catch (MapException me) {
+                                    log.warn(me.getMessage(), me);
                                     return null;
                                 }
                             }

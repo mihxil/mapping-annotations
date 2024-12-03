@@ -16,6 +16,8 @@ import org.meeuw.mapping.impl.JsonUtil;
 import static org.meeuw.mapping.impl.Util.*;
 
 /**
+ * Static utilities to do the actual mapping using {@link Source}
+ *
  * @author Michiel Meeuwissen
  * @since 0.1
  */
@@ -30,18 +32,26 @@ public class Mapper {
      * Creates a new instance (using the no-args constructor) and copies all {@link Source} annotated fields (that match) from source to it.
      * @param source The source object copy data from
      * @param destinationClass The class to create a destination object for
+     * @param groups If not empty, only mapping is done if one (or more) of the given groups matches one of the groups of the source annotations.
      * @see #map(Object, Object, Class...)
+     * @return a new object of class {@code destinationClass} which all fields filled that are found in {@code source}
      */
-    public static Object map(Object source, Class<?> destinationClass, Class<?>... groups) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        Object destination = destinationClass.getDeclaredConstructor().newInstance();
-        map(source, destination, groups);
-        return destination;
+    public static Object map(Object source, Class<?> destinationClass, Class<?>... groups)  {
+        try {
+            Object destination = destinationClass.getDeclaredConstructor().newInstance();
+            map(source, destination, groups);
+            return destination;
+        } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+            throw new MapException(e);
+        }
+
     }
 
     /**
      * Maps all fields in {@code destination} that are annoted with a {@link Source} that matched a field in {@code source}
      * @param source The source object
      * @param destination The destination object
+     * @param groups If not empty, only mapping is done if one (or more) of the given groups matches one of the groups of the source annotations.
      */
     public static void map(Object source, Object destination, Class<?>... groups) {
         map(source, destination, destination.getClass(), groups);
@@ -92,14 +102,14 @@ public class Mapper {
      * Return a function that will using reflection get the value from a source object that maps to the destination field.
      *
      */
-    public static Optional<Function<Object, Optional<Object>>> sourceGetter(Field destinationField, Class<?> sourceClass, Class<?>... groups) {
+    private static Optional<Function<Object, Optional<Object>>> sourceGetter(Field destinationField, Class<?> sourceClass, Class<?>... groups) {
         Map<Class<?>, Optional<Function<Object, Optional<Object>>>> c = GETTER_CACHE.computeIfAbsent(destinationField, (fi) -> new ConcurrentHashMap<>());
         return c.computeIfAbsent(sourceClass, cl -> _sourceGetter(destinationField, sourceClass));
 
     }
 
     /**
-     * Uncached version of {@link #sourceGetter(Field, Class)}
+     * Uncached version of {@link #sourceGetter(Field, Class, Class[])}
      */
     private static Optional<Function<Object, Optional<Object>>> _sourceGetter(Field destinationField, Class<?> sourceClass, Class<?>... groups) {
         Optional<Source> annotation = getAnnotation(sourceClass, destinationField, groups);

@@ -1,3 +1,6 @@
+/**
+ * See {@link org.meeuw.mapping.Mapper}
+ */
 module org.meeuw.mapping.annotations {
     requires static lombok;
     requires org.slf4j;
