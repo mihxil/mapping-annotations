@@ -21,7 +21,7 @@ public class Destination {
     @Source(field = "moreJson", jsonPointer ="/a/b/value")
     String description;
 
-    @Source()
+    @Source(jsonPointer = "/")
     JsonNode moreJson;
     
     @Source(field = "subObject", path="id", sourceClass = ExtendedSourceObject.class)

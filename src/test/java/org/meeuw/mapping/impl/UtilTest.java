@@ -56,7 +56,7 @@ class UtilTest {
        assertThat(Util.getMappedDestinationProperties(
            ExtendedSourceObject.class,
            Destination.class
-       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "id", "list");
+       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "id", "list", "list2");
 
        assertThat(Util.getMappedDestinationProperties(
            SourceObject.class,

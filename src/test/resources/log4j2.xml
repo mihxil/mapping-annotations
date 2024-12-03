@@ -2,14 +2,14 @@
 <Configuration status="INFO">
   <Appenders>
     <Console name="console">
-      <PatternLayout pattern="%d{ISO8601} %4.4p - %m  [ %c - %t ] %n"
+      <PatternLayout pattern="%d{ISO8601} %C %M.%L %4.4p - %m  [ %c - %t ] %n"
                      charset="UTF-8"/>
     </Console>
   </Appenders>
   <Loggers>
 
     <Root level="DEBUG">
-      <AppenderRef ref="console" level="DEBUG"/>
+      <AppenderRef ref="console" level="INFO"/>
     </Root>
   </Loggers>
 </Configuration>

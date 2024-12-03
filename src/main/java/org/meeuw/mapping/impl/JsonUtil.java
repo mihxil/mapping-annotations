@@ -7,8 +7,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.*;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import java.io.IOException;
@@ -18,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import lombok.extern.slf4j.Slf4j;
-import org.meeuw.mapping.Mapper;
+import static org.meeuw.mapping.Mapper.map;
 import org.meeuw.mapping.annotations.Source;
 import static org.meeuw.mapping.impl.Util.getAnnotation;
 
@@ -98,11 +97,18 @@ public class JsonUtil {
     private static Optional<Object> getSourceJsonValueByPath(Object source, Field sourceField, String[] path, String jsonPath) {
 
          return getSourceJsonValue(source, sourceField, path)
-             .map(jn -> {
-                 return (JsonNode) JsonPath.using(JSONPATH_CONFIGURATION).parse(jn).read(JSONPATH_CACHE.computeIfAbsent(jsonPath,
-                     JsonPath::compile));
-             })
+             .map(jn -> getByJsonPath(jn, jsonPath))
              .map(JsonUtil::unwrapJson);
+    }
+
+    private static JsonNode getByJsonPath(JsonNode jn, String jsonPath) {
+        try {
+            return JsonPath.using(JSONPATH_CONFIGURATION).parse(jn).read(JSONPATH_CACHE.computeIfAbsent(jsonPath,
+                JsonPath::compile));
+        } catch (PathNotFoundException pathNotFoundException) {
+            log.debug(pathNotFoundException.getMessage());
+            return MAPPER.nullNode();
+        }
     }
 
     static Object unwrapJsonIfPossible(Object json, Field destination) {
@@ -116,7 +122,7 @@ public class JsonUtil {
                     return list.stream()
                         .map(o -> {
                                 try {
-                                    return Mapper.map(o, genericClass);
+                                    return map(o, genericClass);
                                 } catch (NoSuchMethodException | InvocationTargetException | InstantiationException |
                                          IllegalAccessException e) {
                                     log.warn(e.getMessage(), e);
@@ -180,9 +186,8 @@ public class JsonUtil {
             return o -> {
                JsonNode value = finalWithFieldAndPath.apply((JsonNode) o);
                return Optional.ofNullable(unwrapJson(
-                   JsonPath.using(JSONPATH_CONFIGURATION)
-                       .parse(value).read(JSONPATH_CACHE.computeIfAbsent(s.jsonPath(), JsonPath::compile))));
-           };
+                   getByJsonPath(value, s.jsonPath())));
+            };
        }
    }
 
@@ -221,6 +226,9 @@ public class JsonUtil {
                 result.add(unwrapJson(e));
             });
             return result;
+        }
+        if (jsonNode.isObject()) {
+            return jsonNode;
         }
         // Not complete, I suppose
         return jsonNode.asText();
