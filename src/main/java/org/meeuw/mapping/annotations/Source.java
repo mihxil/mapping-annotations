@@ -13,7 +13,7 @@ import java.lang.annotation.*;
  * @since 0.1
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.FIELD, ElementType.TYPE_PARAMETER})
+@Target({ElementType.FIELD, ElementType.TYPE_PARAMETER, ElementType.TYPE})
 @Repeatable(Sources.class)
 public @interface Source {
 

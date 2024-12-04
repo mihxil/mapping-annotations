@@ -88,4 +88,20 @@ class MapperTest {
     }
 
 
+    @Test
+    void withDefaults() {
+        SourceObject sourceObject = new SourceObject();
+        sourceObject.setJson("""
+            {
+                title: "foo",
+                description: "bar"
+            }
+            """.getBytes(StandardCharsets.UTF_8));
+
+        AnotherDestination anotherDestination = Mapper.map(sourceObject, AnotherDestination.class);
+        assertThat(anotherDestination.getTitle()).isEqualTo("foo");
+        assertThat(anotherDestination.getDescription()).isEqualTo("bar");
+
+    }
+
 }

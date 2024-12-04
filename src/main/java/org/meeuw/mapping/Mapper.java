@@ -11,6 +11,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import org.meeuw.mapping.annotations.Source;
+import org.meeuw.mapping.impl.EffectiveSource;
 import org.meeuw.mapping.impl.JsonUtil;
 import static org.meeuw.mapping.impl.Util.*;
 
@@ -35,9 +36,9 @@ public class Mapper {
      * @see #map(Object, Object, Class...)
      * @return a new object of class {@code destinationClass} which all fields filled that are found in {@code source}
      */
-    public static Object map(Object source, Class<?> destinationClass, Class<?>... groups)  {
+    public static <T> T map(Object source, Class<T> destinationClass, Class<?>... groups)  {
         try {
-            Object destination = destinationClass.getDeclaredConstructor().newInstance();
+            T destination = destinationClass.getDeclaredConstructor().newInstance();
             map(source, destination, groups);
             return destination;
         } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
@@ -141,9 +142,9 @@ public class Mapper {
      * Uncached version of {@link #sourceGetter(Field, Class, Class[])}
      */
     private static Optional<Function<Object, Optional<Object>>> _sourceGetter(Field destinationField, Class<?> sourceClass, Class<?>... groups) {
-        Optional<Source> annotation = getAnnotation(sourceClass, destinationField, groups);
+        Optional<EffectiveSource> annotation = getAnnotation(sourceClass, destinationField, groups);
         if (annotation.isPresent()) {
-            final Source s = annotation.get();
+            final EffectiveSource s = annotation.get();
             String sourceFieldName = s.field();
             if (isJsonField(sourceClass)) {
               return Optional.of(JsonUtil.valueFromJsonGetter(s));
@@ -182,9 +183,9 @@ public class Mapper {
      * Uncached version of {@link #destinationSetter(Field, Class)}
      */
     private static  BiConsumer<Object, Object> _destinationSetter(Field f, Class<?> sourceClass) {
-        Optional<Source> annotation = getAnnotation(sourceClass, f);
+        Optional<EffectiveSource> annotation = getAnnotation(sourceClass, f);
         if (annotation.isPresent()) {
-            Source s = annotation.get();
+            EffectiveSource s = annotation.get();
             String sourceFieldName = s.field();
             if (isJsonField(sourceClass)) {
                 f.setAccessible(true);

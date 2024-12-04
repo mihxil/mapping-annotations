@@ -11,7 +11,8 @@ import com.jayway.jsonpath.*;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import java.io.IOException;
-import java.lang.reflect.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -19,12 +20,11 @@ import java.util.function.UnaryOperator;
 import lombok.extern.slf4j.Slf4j;
 import org.meeuw.mapping.MapException;
 import static org.meeuw.mapping.Mapper.map;
-import org.meeuw.mapping.annotations.Source;
 import static org.meeuw.mapping.impl.Util.getAnnotation;
 
 /**
  * Mapping supports also picking up fields from fields that contain json.
- * This class contains related to that.
+ * This class contains utilities related to that.
  *
  * @author Michiel Meeuwissen
  * @since 0.1
@@ -55,7 +55,7 @@ public class JsonUtil {
         .build();
 
     static Optional<Object> getSourceValueFromJson(Object source, Field destination, List<String> path, Class<?>... groups) {
-        Source annotation = getAnnotation(source.getClass(), destination, groups).orElseThrow();
+        EffectiveSource annotation = getAnnotation(source.getClass(), destination, groups).orElseThrow();
         String field = annotation.field();
         if ("".equals(field)) {
             field = destination.getName();
@@ -67,7 +67,7 @@ public class JsonUtil {
 
     }
 
-    public static Optional<Object> getSourceJsonValue(Source annotation, Object source, Field sourceField, Field destination) {
+    public static Optional<Object> getSourceJsonValue(EffectiveSource annotation, Object source, Field sourceField, Field destination) {
            if (!"".equals(annotation.jsonPath())) {
             if (! "".equals(annotation.jsonPointer())) {
                 throw new IllegalStateException();
@@ -162,7 +162,7 @@ public class JsonUtil {
    }
 
 
-   public static Function<Object, Optional<Object>> valueFromJsonGetter(Source s) {
+   public static Function<Object, Optional<Object>> valueFromJsonGetter(EffectiveSource s) {
        UnaryOperator<JsonNode> withField = UnaryOperator.identity();
        if (!"".equals(s.field())) {
            withField = o -> o.get(s.field());

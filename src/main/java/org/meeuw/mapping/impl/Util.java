@@ -26,10 +26,20 @@ public class Util {
 
 
 
-    public static Optional<Source> getAnnotation(Class<?> sourceClass, Field destinationField, Class<?>... groups) {
+    public static Optional<EffectiveSource> getAnnotation(Class<?> sourceClass, Field destinationField, Class<?>... groups) {
+
         destinationField =  associatedBuilderField(destinationField).orElse(destinationField);
-        Source s = null;
-        for (Source proposal : getAllSourceAnnotations(destinationField)) {
+        Source defaultValues = null;
+        {
+            Class<?> clazz = destinationField.getDeclaringClass();
+            while(clazz != Object.class && defaultValues == null) {
+                defaultValues = destinationField.getDeclaringClass().getAnnotation(Source.class);
+                clazz = clazz.getSuperclass();
+            }
+        }
+        EffectiveSource s = null;
+        for (Source annotation : getAllSourceAnnotations(destinationField)) {
+            EffectiveSource proposal =  EffectiveSource.of(annotation, defaultValues);
             if (matches(proposal, sourceClass, destinationField.getName(), groups)) {
                 if (s == null) {
                     s = proposal;
@@ -38,13 +48,14 @@ public class Util {
                         // this means proposal is more specific
                         s = proposal;
                     }
-                    }
+                }
             }
         }
+
         return Optional.ofNullable(s);
     }
 
-    public static List<Source> getAllSourceAnnotations(Field destField) {
+    public static List<Source> getAllSourceAnnotations(AnnotatedElement destField) {
         Sources sources = destField.getAnnotation(Sources.class);
         if (sources != null) {
             return List.of(sources.value());
@@ -86,7 +97,7 @@ public class Util {
     }
 
 
-    private static boolean matches(Source source, Class<?> sourceClass, String destinationField, Class<?>... groups) {
+    private static boolean matches(EffectiveSource source, Class<?> sourceClass, String destinationField, Class<?>... groups) {
         if (source == null) {
             return false;
         }
