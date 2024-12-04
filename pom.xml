@@ -3,7 +3,7 @@
   <groupId>org.meeuw.mapping</groupId>
   <artifactId>mapping-annotations</artifactId>
   <url>https://github.com/mihxil/mapping-annotations</url>
-  <version>0.3-SNAPSHOT</version>
+  <version>0.3</version>
   <name>mapping-annotations</name>
   <description>Annotations then can be used to mark how to map objects</description>
 
@@ -20,7 +20,7 @@
     <connection>scm:git:${project.scm.url}.git</connection>
     <developerConnection>scm:git:${project.scm.url}.git</developerConnection>
     <url>https://github.com/mihxil/mapping-annotations</url>
-    <tag>HEAD</tag>
+    <tag>0.3</tag>
   </scm>
 
 
