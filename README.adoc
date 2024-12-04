@@ -40,7 +40,7 @@ import org.meeuw.mapping.Mapper;
 ...
 
 DestinationObject destination; SourceObject sourceObject;
-Mapper.map(sourceObject, destination);;
+Mapper.MAPPER.map(sourceObject, destination);;
 
 ----
 
@@ -127,7 +127,7 @@ public void toRecord() {
     SourceObject sourceObject = new SourceObject();
     sourceObject.setTitle("bla bla");
     var builder = DestinationRecord.builder();
-    Mapper.map(sourceObject, builder);
+    MAPPER.map(sourceObject, builder);
     var r = builder.build();
     assertThat(r.title()).isEqualTo("bla bla");
 }
