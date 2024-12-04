@@ -35,7 +35,11 @@ jobs:
           gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
           gpg-passphrase: GPG_SECRET_KEY_PASSPHRASE
       - name: Build and deploy with Maven
-        run: |         
+        run: |
+          mv src/main/java/module-info.java /tmp
+          mvn generate-sources -Ddelombok.skip=false
+          mv /tmp/module-info.java src/main/java/
+          cp -f src/main/java/module-info.java target/delombok
           mvn -Pdeploy -B test deploy
         env:
           SONATYPE_USERNAME: ${{ secrets.OSSRH_USERNAME }}
