@@ -8,8 +8,11 @@ image:https://www.javadoc.io/badge/org.meeuw.mapping/mapping-annotations.svg?col
 image:https://img.shields.io/maven-central/v/org.meeuw.mapping/mapping-annotations.svg?label=Maven%20Central[Maven Central,link=https://central.sonatype.com/artifact/org.meeuw.mapping/mapping-annotations/overview]
 
 
+Provides an annotation that can be added to fields, indicating how they must be mapped. This makes mapping from source object
+easy, provided that you can create and annotate the destination object yourself.
 
-Provides an annotation that can be added to fields, indicating how they must be mapped
+It is targeted mainly ad 'dissimilar' mappings, where the destination is pretty different from the source. Actually mainly because
+at NISV/B&G there is a habit to store entire bunches of metadata just as blobs of json in database fields.
 
 == Source annotations
 
@@ -149,14 +152,14 @@ For all fields in this class with `@Source` annotations the default value of the
 
 == Performance
 
-All reflection stuff that in during profiling seemed to be expensive is implicitly cached. The result of json parsing is cached
-only during one mapping call (thread locally actually), so that if may values are sourced from one json field (represented by a
-`String` or `byte[]`), that field's value is parsed only once. That also significantly speed things up in some cases.
+All reflection stuff that during profiling seemed to be expensive is implicitly cached. The result of json parsing is cached
+only during one mapping call (thread locally actually), so that if many values are sourced from one json field (represented by a
+`String` or `byte[]`), that field's value is parsed only once. That also significantly sped things up in some cases.
 
 
 == Bean mapping generally
 
-There are several bean mapping frameworks available, which may be used in stead or in conjuction with this
+There are several bean mapping frameworks available, which may be used instead or in conjunction with this
 
 === MapStruct
 
