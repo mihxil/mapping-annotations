@@ -148,7 +148,7 @@ public class JsonUtil {
 
         @Override
         public boolean equals(Object object){
-            return object instanceof Key other && object == other.object;
+            return object instanceof Key other && this.object == other.object;
         }
         @Override
         public int hashCode() {
