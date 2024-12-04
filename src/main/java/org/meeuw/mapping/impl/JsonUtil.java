@@ -123,7 +123,8 @@ public class JsonUtil {
                     return list.stream()
                         .map(o -> {
                                 try {
-                                    return Mapper.CURRENT.get().map(o, genericClass);
+                                    return Mapper.CURRENT.get()
+                                        .selfMap(o, genericClass);
                                 } catch (MapException me) {
                                     log.warn(me.getMessage(), me);
                                     return null;

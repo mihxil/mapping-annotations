@@ -62,6 +62,17 @@ public class Mapper {
 
     }
 
+    public <T> T selfMap(Object source, Class<T> destinationClass, Class<?>... groups)  {
+        try {
+            T destination = destinationClass.getDeclaredConstructor().newInstance();
+            selfMap(source, destination, groups);
+            return destination;
+        } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+            throw new MapException(e);
+        }
+
+    }
+
     /**
      * Maps all fields in {@code destination} that are annoted with a {@link Source} that matched a field in {@code source}
      * @param source The source object
@@ -71,13 +82,17 @@ public class Mapper {
     public void map(Object source, Object destination, Class<?>... groups) {
         try {
             CURRENT.set(this);
-            map(source, destination, destination.getClass(), groups);
+            selfMap(source, destination, groups);
         } finally {
             CURRENT.remove();
             if (clearJsonCache) {
                 JsonUtil.clearCache();
             }
         }
+    }
+
+     public void selfMap(Object source, Object destination, Class<?>... groups) {
+         map(source, destination, destination.getClass(), groups);
     }
 
     /**
