@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.time.Instant;
 import lombok.extern.log4j.Log4j2;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 import static org.meeuw.mapping.Mapper.MAPPER;
 
@@ -106,5 +107,13 @@ class MapperTest {
         assertThat(anotherDestination.getDescription()).isEqualTo("bar");
 
     }
+
+    @Test
+    void mapException() {
+        assertThatThrownBy(() -> {
+            MAPPER.map(new Object(), ThrowingDestination.class);
+        }).isInstanceOf(MapException.class);
+    }
+
 
 }

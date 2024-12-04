@@ -4,7 +4,6 @@
 package org.meeuw.mapping;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
@@ -31,7 +30,7 @@ public class Mapper {
 
     public static final Mapper MAPPER = Mapper.builder().build();
 
-    public static final ThreadLocal<Mapper> CURRENT = ThreadLocal.withInitial(() -> null);
+    public static final ThreadLocal<Mapper> CURRENT = ThreadLocal.withInitial(() -> MAPPER);
 
     @With
     private final boolean clearJsonCache;
@@ -56,7 +55,7 @@ public class Mapper {
             T destination = destinationClass.getDeclaredConstructor().newInstance();
             map(source, destination, groups);
             return destination;
-        } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+        } catch (ReflectiveOperationException e) {
             throw new MapException(e);
         }
 
@@ -67,7 +66,7 @@ public class Mapper {
             T destination = destinationClass.getDeclaredConstructor().newInstance();
             selfMap(source, destination, groups);
             return destination;
-        } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+        } catch (ReflectiveOperationException e) {
             throw new MapException(e);
         }
 
