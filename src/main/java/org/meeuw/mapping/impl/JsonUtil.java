@@ -3,13 +3,8 @@
  */
 package org.meeuw.mapping.impl;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.jayway.jsonpath.*;
-import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
-import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -17,9 +12,18 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import lombok.extern.slf4j.Slf4j;
+
 import org.meeuw.mapping.MapException;
 import org.meeuw.mapping.Mapper;
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.jayway.jsonpath.*;
+import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
+import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+
 import static org.meeuw.mapping.impl.Util.getAnnotation;
 
 /**
@@ -59,7 +63,7 @@ public class JsonUtil {
         String field = annotation.field();
         if ("".equals(field)) {
             field = destination.getName();
-        } 
+        }
         Field sourceField = Util.getSourceField(source.getClass(), field).orElseThrow();
         log.debug("Found source field {}", sourceField);
 
@@ -114,7 +118,7 @@ public class JsonUtil {
 
     static Object unwrapJsonIfPossible(Object json, Field destination) {
         if (json instanceof ObjectNode) {
-            
+
         } else if (json instanceof List<?> list) {
             if (destination.getType() == List.class) {
                 ParameterizedType genericType = (ParameterizedType) destination.getGenericType();
@@ -124,19 +128,19 @@ public class JsonUtil {
                         .map(o -> {
                                 try {
                                     return Mapper.CURRENT.get()
-                                        .selfMap(o, genericClass);
+                                        .subMap(o, genericClass);
                                 } catch (MapException me) {
                                     log.warn(me.getMessage(), me);
                                     return null;
                                 }
                             }
                         ).toList();
-                } 
+                }
             }
-            
+
         }
         return json;
-        
+
     }
 
     static class Key {

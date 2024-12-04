@@ -3,23 +3,26 @@
  */
 package org.meeuw.mapping;
 
+import lombok.With;
+import lombok.extern.slf4j.Slf4j;
+
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import lombok.With;
-import lombok.extern.slf4j.Slf4j;
+
 import org.meeuw.mapping.annotations.Source;
 import org.meeuw.mapping.impl.EffectiveSource;
 import org.meeuw.mapping.impl.JsonUtil;
+
 import static org.meeuw.mapping.impl.Util.*;
 
 /**
  * Utilities to do the actual mapping using {@link Source}
- * The class is currently stateless (you can always just use {@link #MAPPER}
+ * A {@code Mappper} is thread safe. It only contains (unmodifiable) configuration.
  * <p>
- * If we need configuration, it could be stored in instances of this.
+ * New mappers (with different configuration) can be created using {@link #builder()} or using 'withers' ({@link #withClearJsonCache(boolean)}) from an existing one.
  *
  * @author Michiel Meeuwissen
  * @since 0.1
@@ -27,9 +30,15 @@ import static org.meeuw.mapping.impl.Util.*;
 @Slf4j
 public class Mapper {
 
+    /**
+     * The default {@link Mapper} instance. Mappers are stateless, but can contain some configuration.
+     */
 
     public static final Mapper MAPPER = Mapper.builder().build();
 
+    /**
+     * The Mapper currently effective. A {@link ThreadLocal}. Defaults to {@link #MAPPER}
+     */
     public static final ThreadLocal<Mapper> CURRENT = ThreadLocal.withInitial(() -> MAPPER);
 
     @With
@@ -47,6 +56,7 @@ public class Mapper {
      * @param source The source object copy data from
      * @param destinationClass The class to create a destination object for
      * @param groups If not empty, only mapping is done if one (or more) of the given groups matches one of the groups of the source annotations.
+     * @param <T> Type of the destination object
      * @see #map(Object, Object, Class...)
      * @return a new object of class {@code destinationClass} which all fields filled that are found in {@code source}
      */
@@ -61,10 +71,19 @@ public class Mapper {
 
     }
 
-    public <T> T selfMap(Object source, Class<T> destinationClass, Class<?>... groups)  {
+    /**
+     * Just like {@link #map(Object, Class, Class[])}, but the json cache will not be deleted, and {@link #CURRENT} will not be
+     * set nor removed. This is basically meant to be called by sub mappings.
+     * @param source The source object copy data from
+     * @param destinationClass The class to create a destination object for
+     * @param groups If not empty, only mapping is done if one (or more) of the given groups matches one of the groups of the source annotations.
+     * @param <T> Type of the destination object
+     * @return A new instance of {@code destinationClass}, fill using {@code source}
+     */
+    public <T> T subMap(Object source, Class<T> destinationClass, Class<?>... groups)  {
         try {
             T destination = destinationClass.getDeclaredConstructor().newInstance();
-            selfMap(source, destination, groups);
+            subMap(source, destination, groups);
             return destination;
         } catch (ReflectiveOperationException e) {
             throw new MapException(e);
@@ -81,7 +100,7 @@ public class Mapper {
     public void map(Object source, Object destination, Class<?>... groups) {
         try {
             CURRENT.set(this);
-            selfMap(source, destination, groups);
+            subMap(source, destination, groups);
         } finally {
             CURRENT.remove();
             if (clearJsonCache) {
@@ -90,7 +109,14 @@ public class Mapper {
         }
     }
 
-     public void selfMap(Object source, Object destination, Class<?>... groups) {
+    /**
+     * Just like {@link #map(Object, Object, Class[])}, but the json cache will not be deleted, and {@link #CURRENT} will not be
+     * set nor removed. This is basically meant to be called by sub mappings.
+     * @param source The source object
+     * @param destination The destination object
+     * @param groups If not empty, only mapping is done if one (or more) of the given groups matches one of the groups of the source annotations.
+     */
+     public void subMap(Object source, Object destination, Class<?>... groups) {
          map(source, destination, destination.getClass(), groups);
     }
 
@@ -153,7 +179,7 @@ public class Mapper {
     private void getAndSet(
         Field destinationField,
         Class<?> sourceClass,
-        Object source, 
+        Object source,
         Object destination,
         Class<?>... groups) {
         Optional<Function<Object, Optional<Object>>> getter = sourceGetter(destinationField, sourceClass, groups);
@@ -190,7 +216,7 @@ public class Mapper {
             Optional<Field> sourceField = getSourceField(sourceClass, sourceFieldName);
             if (sourceField.isPresent()) {
                 final Field sf = sourceField.get();
-                
+
                 if ("".equals(s.jsonPointer()) && "".equals(s.jsonPath())) {
                     return Optional.of(source -> getSourceValue(source, sf, s.path()));
                 } else {
@@ -249,6 +275,6 @@ public class Mapper {
         }
         return (d, v) -> {};
     }
-    
+
 
 }

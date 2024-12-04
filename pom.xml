@@ -13,6 +13,10 @@
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <maven.compiler.release>17</maven.compiler.release>
+
+    <lombok.version>1.18.36</lombok.version>
+    <delombok.output>target/delombok</delombok.output>
+    <delombok.skip>true</delombok.skip>
   </properties>
 
 
@@ -62,7 +66,7 @@
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.18.36</version>
+      <version>${lombok.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -92,10 +96,11 @@
       <version>3.26.3</version>
       <scope>test</scope>
     </dependency>
- 
+
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -108,7 +113,7 @@
             <annotationProcessorPath>
               <groupId>org.projectlombok</groupId>
               <artifactId>lombok</artifactId>
-              <version>1.18.36</version>
+              <version>${lombok.version}</version>
             </annotationProcessorPath>
           </annotationProcessorPaths>
         </configuration>
@@ -139,6 +144,7 @@
         <configuration>
           <failOnError>false</failOnError>
           <show>public</show>
+          <sourcepath>${delombok.output}</sourcepath>
         </configuration>
       </plugin>
       <plugin>
@@ -183,6 +189,32 @@
           <branchName>${project.version}</branchName>
           <tagNameFormat>@{project.version}</tagNameFormat>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok-maven-plugin</artifactId>
+        <version>1.18.20.0</version>
+        <configuration>
+          <outputDirectory>${delombok.output}</outputDirectory>
+          <sourceDirectory>src/main/java</sourceDirectory>
+          <addOutputDirectory>false</addOutputDirectory>
+          <skip>${delombok.skip}</skip>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.16</version>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>delombok</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
 
@@ -235,4 +267,3 @@
   </profiles>
 
 </project>
- 

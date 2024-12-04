@@ -37,9 +37,10 @@ class DestinationObject {
 ----
 
 All fields annotated like so can be filled like this:
-[source, java]
+
+[source,java]
 ----
-import org.meeuw.mapping.Mapper;
+
 ...
 
 DestinationObject destination; SourceObject sourceObject;

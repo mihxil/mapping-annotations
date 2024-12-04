@@ -13,5 +13,8 @@ import java.lang.annotation.*;
 @Target({ElementType.FIELD, ElementType.TYPE_PARAMETER})
 public @interface Sources {
 
+    /**
+     * The {@link Source} annotations that this is wrapping
+     */
     Source[] value();
 }
