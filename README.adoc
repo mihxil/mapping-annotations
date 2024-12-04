@@ -171,6 +171,25 @@ https://github.com/mihxil/modelmapper-json-source-annotation[This was however my
 - java 17
 - jackson2 is used for json parsing, slf4j2 for logging
 
+=== versions
+|===
+|version | date | remarks
+
+|0.3
+| ?
+|more caching (of json parsing), made Mapper methods non-static, so Mapper's can be configured.
+
+|0.2
+|2024-12
+|some refactoring, jsonPath support (using jway)
+
+
+|0.1
+|2024-12
+|initial version
+
+|===
+
 
 == TODO
 
