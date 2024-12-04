@@ -147,6 +147,13 @@ public class Program {
 For all fields in this class with `@Source` annotations the default value of the `sourceClass` and `field` attributes are not empty, but as specified on class level. In this way it is easy to map a bunch of field all from one source field (in this case `payload`), in this case for example by only specifing `@Source(jsonPointer='<something>')`
 
 
+== Performance
+
+All reflection stuff that in during profiling seemed to be expensive is implicitly cached. The result of json parsing is cached
+only during one mapping call (thread locally actually), so that if may values are sourced from one json field (represented by a
+`String` or `byte[]`), that field's value is parsed only once. That also significantly speed things up in some cases.
+
+
 == Bean mapping generally
 
 There are several bean mapping frameworks available, which may be used in stead or in conjuction with this
@@ -177,7 +184,7 @@ https://github.com/mihxil/modelmapper-json-source-annotation[This was however my
 
 |0.3
 | ?
-|more caching (of json parsing), made Mapper methods non-static, so Mapper's can be configured.
+|more caching (of json parsing), made Mapper methods non-static, so Mapper's can be configured. class-level defaults.
 
 |0.2
 |2024-12
@@ -193,6 +200,5 @@ https://github.com/mihxil/modelmapper-json-source-annotation[This was however my
 
 == TODO
 
-- Automatic mapping subtypes? (kinda done)
-- Instantiating? (done with just default contructor)
 - Implicit scalar-mapping (may be we can profit from spring conversion? from model mapper?)
+- We may even specify defaults for fields with no `@Source` annotations at all, so that they too get implicitely mappable.
