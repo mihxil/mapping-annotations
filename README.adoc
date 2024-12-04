@@ -48,7 +48,23 @@ So, this initial implementation:
 - So the object need be modifiable, but see link:#java_records[how it is supported for java records], immutability can be obtained by mapping to a builder.
 
 
-== Json 'sub' fields
+== Sub fields
+Sometimes not the value in a field itself is needed, but the value of field it _its_ value.
+
+For that the 'path' atribute can be used.
+
+[source, java]
+----
+@Source(field = "compoundId", path="id")
+Long id;
+----
+which can also be deeper
+[source, java]
+----
+@Source(path = {"a", "b"})
+----
+
+== Json sub fields
 
 It is also possible to pick up values from a field containing json
 
@@ -64,7 +80,7 @@ For more sophisticated cases it can also be done with jsonpath
 
 [source, java]
 ----
- 
+
     @Source(sourceClass = AggregatedMetadata.class, field = "payload", jsonPath = "['nisv.currentbroadcaster'][*]['currentbroadcaster.broadcaster']")
     protected List<EntityMetadata> broadcasters;
 ----
@@ -82,7 +98,7 @@ This also demonstrates that if the jsonPath/jsonPointer points to a JsonNode, th
 
 == Java records[[java_records]]
 
-For now, java records (and probably other readonly structures) are supported if they have a (lombok generated builder). Like so
+For now, java records (and probably other readonly structures) are supported if they have a (lombok generated) builder. Like so
 
 [source, java]
 ----
@@ -115,6 +131,17 @@ public void toRecord() {
 ----
 
 So, you can map to the _builder_.
+
+== Annotating the whole class
+
+Defaults for all attributes of the `@Source` annotations can be added on class level
+[source, java]
+----
+@Source(sourceClass = AggregatedMetadata.class, field = "payload")
+public class Program {
+----
+
+For all fields in this class with `@Source` annotations the default value of the `sourceClass` and `field` attributes are not empty, but as specified on class level. In this way it is easy to map a bunch of field all from one source field (in this case `payload`), in this case for example by only specifing `@Source(jsonPointer='<something>')`
 
 
 == Bean mapping generally
