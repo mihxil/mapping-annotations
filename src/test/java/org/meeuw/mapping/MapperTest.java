@@ -6,6 +6,7 @@ import java.time.Instant;
 import lombok.extern.log4j.Log4j2;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
+import static org.meeuw.mapping.Mapper.MAPPER;
 
 @Log4j2
 class MapperTest {
@@ -16,7 +17,7 @@ class MapperTest {
         SourceObject sourceObject = new SourceObject();
         sourceObject.setJson("{'title': 'foobar'}".getBytes(StandardCharsets.UTF_8));
 
-        Mapper.map(sourceObject, destination);;
+        MAPPER.map(sourceObject, destination);;
         log.info("{}", destination);
         assertThat(destination.getTitle()).isEqualTo("foobar");
         assertThat(destination.getMoreJson()).isEqualTo(sourceObject.getMoreJson());
@@ -33,24 +34,26 @@ class MapperTest {
         """
         );
 
-        Mapper.map(sourceObject, destination);;
+        MAPPER.map(sourceObject, destination);;
         log.info("{}", destination);
         assertThat(destination.getTitle()).isEqualTo("foobar");
     }
 
     @Test
     public void time() {
+        String moreJson = """
+            {"title": "foobar"}
+            """;
+        Mapper mapper = MAPPER.withClearJsonCache(false);
         Instant start = Instant.now();
         for (int i = 0; i < 1_000_000; i++) {
             Destination destination = new Destination();
             ExtendedSourceObject sourceObject = new ExtendedSourceObject();
             sourceObject.setTitle("foobar");
             sourceObject.setSubObject(new SubObject("a", null, 1L ));
-            sourceObject.setMoreJson("""
-            {"title": "foobar"}
-            """
-            );
-            Mapper.map(sourceObject, destination);
+            sourceObject.setMoreJson(moreJson);
+
+            mapper.map(sourceObject, destination);
 
             log.debug("{}", destination);
         }
@@ -62,7 +65,7 @@ class MapperTest {
         SourceObject sourceObject = new SourceObject();
         sourceObject.setTitle("bla bla");
         var builder = DestinationRecord.builder();
-        Mapper.map(sourceObject, builder);
+        MAPPER.map(sourceObject, builder);
         var r = builder.build();
         assertThat(r.title()).isEqualTo("bla bla");
     }
@@ -71,12 +74,12 @@ class MapperTest {
 
    @Test
    void getMappedDestinationProperties() {
-       assertThat(Mapper.getMappedDestinationProperties(
+       assertThat(MAPPER.getMappedDestinationProperties(
            ExtendedSourceObject.class,
            Destination.class
        ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "id", "list", "list2");
 
-       assertThat(Mapper.getMappedDestinationProperties(
+       assertThat(MAPPER.getMappedDestinationProperties(
            SourceObject.class,
            Destination.class
        ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "list", "list2");
@@ -84,7 +87,7 @@ class MapperTest {
 
     @Test
     void getMappedDestinationProperties2() {
-        assertThat(Mapper.getMappedDestinationProperties(AnotherSource.class , Destination.class).keySet()).containsExactlyInAnyOrder("title");
+        assertThat(MAPPER.getMappedDestinationProperties(AnotherSource.class , Destination.class).keySet()).containsExactlyInAnyOrder("title");
     }
 
 
@@ -98,7 +101,7 @@ class MapperTest {
             }
             """.getBytes(StandardCharsets.UTF_8));
 
-        AnotherDestination anotherDestination = Mapper.map(sourceObject, AnotherDestination.class);
+        AnotherDestination anotherDestination = MAPPER.map(sourceObject, AnotherDestination.class);
         assertThat(anotherDestination.getTitle()).isEqualTo("foo");
         assertThat(anotherDestination.getDescription()).isEqualTo("bar");
 

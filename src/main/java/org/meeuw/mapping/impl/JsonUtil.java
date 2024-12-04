@@ -19,7 +19,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import lombok.extern.slf4j.Slf4j;
 import org.meeuw.mapping.MapException;
-import static org.meeuw.mapping.Mapper.map;
+import org.meeuw.mapping.Mapper;
 import static org.meeuw.mapping.impl.Util.getAnnotation;
 
 /**
@@ -123,7 +123,7 @@ public class JsonUtil {
                     return list.stream()
                         .map(o -> {
                                 try {
-                                    return map(o, genericClass);
+                                    return Mapper.CURRENT.get().map(o, genericClass);
                                 } catch (MapException me) {
                                     log.warn(me.getMessage(), me);
                                     return null;
@@ -137,27 +137,51 @@ public class JsonUtil {
         return json;
         
     }
-    
+
+    static class Key {
+        final Object object;
+
+        Key(Object object) {
+            this.object = object;
+        }
+
+        @Override
+        public boolean equals(Object object){
+            return object instanceof Key other && object == other.object;
+        }
+        @Override
+        public int hashCode() {
+            return object.hashCode();
+        }
+    }
+
+    public static final ThreadLocal<Map<Key, JsonNode>> JSON_CACHE = ThreadLocal.withInitial(HashMap::new);
+
+
+    public static void clearCache() {
+        JSON_CACHE.get().clear();
+    }
 
     static Optional<JsonNode> getSourceJsonValue(Object source, Field sourceField, String... path) {
 
         return Util.getSourceValue(source, sourceField, path)
             .map(json -> {
-                JsonNode node;
-                try {
-                    if (json instanceof byte[] bytes) {
-                        node = MAPPER.readTree(bytes);
-                    } else if (json instanceof String string) {
-                        node = MAPPER.readTree(string);
-                    } else if (json instanceof JsonNode n) {
-                        node = n;
-                    } else {
-                        throw new IllegalStateException("%s could not be mapped to json %s -> %s".formatted(sourceField, json, json));
+                Key k = new Key(json);
+                return  JSON_CACHE.get().computeIfAbsent(k, (key) -> {
+                    try {
+                        if (json instanceof byte[] bytes) {
+                            return MAPPER.readTree(bytes);
+                        } else if (json instanceof String string) {
+                            return MAPPER.readTree(string);
+                        } else if (json instanceof JsonNode n) {
+                            return n;
+                        } else {
+                            throw new IllegalStateException("%s could not be mapped to json %s -> %s".formatted(sourceField, json, json));
+                        }
+                    } catch (IOException e) {
+                        throw new IllegalStateException(e.getMessage(), e);
                     }
-                } catch (IOException e) {
-                    throw new IllegalStateException(e.getMessage(), e);
-                }
-                return node;
+                });
             });
    }
 

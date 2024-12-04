@@ -14,6 +14,7 @@ import lombok.extern.log4j.Log4j2;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import org.meeuw.mapping.*;
+import static org.meeuw.mapping.Mapper.MAPPER;
 
 @Log4j2
 class JsonUtilTest {
@@ -88,7 +89,7 @@ class JsonUtilTest {
                             }                        
           }
           """);
-        Mapper.map(node, subObject);
+        MAPPER.map(node, subObject);
 
         assertThat(subObject.getBroadcaster()).isEqualTo("VPRO");
         

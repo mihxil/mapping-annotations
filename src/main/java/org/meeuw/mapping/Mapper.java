@@ -9,6 +9,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import lombok.With;
 import lombok.extern.slf4j.Slf4j;
 import org.meeuw.mapping.annotations.Source;
 import org.meeuw.mapping.impl.EffectiveSource;
@@ -16,7 +17,10 @@ import org.meeuw.mapping.impl.JsonUtil;
 import static org.meeuw.mapping.impl.Util.*;
 
 /**
- * Static utilities to do the actual mapping using {@link Source}
+ * Utilities to do the actual mapping using {@link Source}
+ * The class is currently stateless (you can always just use {@link #MAPPER}
+ * <p>
+ * If we need configuration, it could be stored in instances of this.
  *
  * @author Michiel Meeuwissen
  * @since 0.1
@@ -24,9 +28,20 @@ import static org.meeuw.mapping.impl.Util.*;
 @Slf4j
 public class Mapper {
 
-    private Mapper() {
-        // no instances
+
+    public static final Mapper MAPPER = Mapper.builder().build();
+
+    public static final ThreadLocal<Mapper> CURRENT = ThreadLocal.withInitial(() -> null);
+
+    @With
+    private final boolean clearJsonCache;
+
+    @lombok.Builder
+    public Mapper(
+        boolean clearJsonCache) {
+        this.clearJsonCache = clearJsonCache;
     }
+
 
     /**
      * Creates a new instance (using the no-args constructor) and copies all {@link Source} annotated fields (that match) from source to it.
@@ -36,7 +51,7 @@ public class Mapper {
      * @see #map(Object, Object, Class...)
      * @return a new object of class {@code destinationClass} which all fields filled that are found in {@code source}
      */
-    public static <T> T map(Object source, Class<T> destinationClass, Class<?>... groups)  {
+    public <T> T map(Object source, Class<T> destinationClass, Class<?>... groups)  {
         try {
             T destination = destinationClass.getDeclaredConstructor().newInstance();
             map(source, destination, groups);
@@ -53,8 +68,16 @@ public class Mapper {
      * @param destination The destination object
      * @param groups If not empty, only mapping is done if one (or more) of the given groups matches one of the groups of the source annotations.
      */
-    public static void map(Object source, Object destination, Class<?>... groups) {
-        map(source, destination, destination.getClass(), groups);
+    public void map(Object source, Object destination, Class<?>... groups) {
+        try {
+            CURRENT.set(this);
+            map(source, destination, destination.getClass(), groups);
+        } finally {
+            CURRENT.remove();
+            if (clearJsonCache) {
+                JsonUtil.clearCache();
+            }
+        }
     }
 
     /**
@@ -63,7 +86,7 @@ public class Mapper {
      * @param destinationClass Class of a destination object
      * @param groups If not empty, only mapping is done if one (or more) of the given groups matches one of the groups of the source annotations.
      */
-    public static Map<String, Field> getMappedDestinationProperties(Class<?> sourceClass, Class<?> destinationClass, Class<?>... groups) {
+    public Map<String, Field> getMappedDestinationProperties(Class<?> sourceClass, Class<?> destinationClass, Class<?>... groups) {
         Map<String, Field> result = new HashMap<>();
         Class<?> superClass = sourceClass.getSuperclass();
         if (superClass != null) {
@@ -71,9 +94,7 @@ public class Mapper {
         }
         for (Field field : destinationClass.getDeclaredFields()) {
             getAnnotation(sourceClass, field, groups)
-                .ifPresent(a -> {
-                    result.put(field.getName(), field);
-                });
+                .ifPresent(a -> result.put(field.getName(), field));
         }
         return Collections.unmodifiableMap(result);
     }
@@ -84,7 +105,7 @@ public class Mapper {
      * @param sourceClass Class of a source object
      * @param groups If not empty, only mapping is done if one (or more) of the given groups matches one of the groups of the source annotations.
      */
-    public static Optional<Function<Object, Optional<Object>>> sourceGetter(Field destinationField, Class<?> sourceClass, Class<?>... groups) {
+    public Optional<Function<Object, Optional<Object>>> sourceGetter(Field destinationField, Class<?> sourceClass, Class<?>... groups) {
         Map<Class<?>, Optional<Function<Object, Optional<Object>>>> c = GETTER_CACHE.computeIfAbsent(destinationField, (fi) -> new ConcurrentHashMap<>());
         return c.computeIfAbsent(sourceClass, cl -> _sourceGetter(destinationField, sourceClass));
 
@@ -99,7 +120,7 @@ public class Mapper {
      * Helper class for {@link #map(Object, Object, Class...)}, recursively called for the class and superclass of the destination
      * object.
      */
-    private static void map(Object source, Object destination, Class<?> forClass, Class<?>... groups) {
+    private void map(Object source, Object destination, Class<?> forClass, Class<?>... groups) {
         Class<?> sourceClass = source.getClass();
         Class<?> superClass = forClass.getSuperclass();
         if (superClass != null) {
@@ -115,7 +136,7 @@ public class Mapper {
      * For a field in the destination object, try to get value from the source, and set
      * this value in destination. Or do nohting if there is no match found
      */
-    private static void getAndSet(
+    private void getAndSet(
         Field destinationField,
         Class<?> sourceClass,
         Object source, 
