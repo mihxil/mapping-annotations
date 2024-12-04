@@ -1,4 +1,5 @@
 = mapping annotations
+:toc:
 
 image:https://github.com/mihxil/mapping-annotations/actions/workflows/maven.yml/badge.svg?[Build Status,link=https://github.com/mihxil/mapping-annotations/actions/workflows/maven.yml]
 image:https://codecov.io/gh/mihxil/mapping-annotations/branch/main/graph/badge.svg[codecov,link=https://codecov.io/gh/mihxil/mapping-annotations]
@@ -6,7 +7,9 @@ image:https://img.shields.io/nexus/s/https/oss.sonatype.org/org.meeuw.mapping/ma
 image:https://www.javadoc.io/badge/org.meeuw.mapping/mapping-annotations.svg?color=blue[javadoc,link=https://www.javadoc.io/doc/org.meeuw.mapping/mapping-annotations]
 image:https://img.shields.io/maven-central/v/org.meeuw.mapping/mapping-annotations.svg?label=Maven%20Central[Maven Central,link=https://central.sonatype.com/artifact/org.meeuw.mapping/mapping-annotations/overview]
 
-Provides some annotation that can be added to field, indicating how they must be mapped
+
+
+Provides an annotation that can be added to fields, indicating how they must be mapped
 
 == Source annotations
 
