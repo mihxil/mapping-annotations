@@ -29,7 +29,12 @@ jobs:
           email: 'github@meeuw.org'
           token: '${{ secrets.GITHUB_TOKEN  }}'
       - name: Release
-        run: mvn -Pdeploy --batch-mode  -Darguments=-DskipTests  release:prepare release:perform
+        run: |
+          (cd mv src/main/java; mv module-info.java module-info.java.not)
+          mvn generate-sources -Ddelombok.skip=false
+          (cd mv src/main/java; mv module-info.java.not module-info.java)
+          cp -f src/main/java/module-info.java target/delombok
+          mvn -Pdeploy --batch-mode  -Darguments=-DskipTests  release:prepare release:perform
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}

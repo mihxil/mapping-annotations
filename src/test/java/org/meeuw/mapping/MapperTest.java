@@ -1,12 +1,15 @@
 package org.meeuw.mapping;
 
+import lombok.extern.log4j.Log4j2;
+
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
-import lombok.extern.log4j.Log4j2;
+
+import org.junit.jupiter.api.Test;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import org.junit.jupiter.api.Test;
 import static org.meeuw.mapping.Mapper.MAPPER;
 
 @Log4j2
@@ -16,12 +19,12 @@ class MapperTest {
     public void test() {
         Destination destination = new Destination();
         SourceObject sourceObject = new SourceObject();
-        sourceObject.setJson("{'title': 'foobar'}".getBytes(StandardCharsets.UTF_8));
+        sourceObject.json("{'title': 'foobar'}".getBytes(StandardCharsets.UTF_8));
 
         MAPPER.map(sourceObject, destination);;
         log.info("{}", destination);
-        assertThat(destination.getTitle()).isEqualTo("foobar");
-        assertThat(destination.getMoreJson()).isEqualTo(sourceObject.getMoreJson());
+        assertThat(destination.title()).isEqualTo("foobar");
+        assertThat(destination.moreJson()).isEqualTo(sourceObject.moreJson());
 
     }
 
@@ -37,7 +40,7 @@ class MapperTest {
 
         MAPPER.map(sourceObject, destination);;
         log.info("{}", destination);
-        assertThat(destination.getTitle()).isEqualTo("foobar");
+        assertThat(destination.title()).isEqualTo("foobar");
     }
 
     @Test
@@ -50,9 +53,9 @@ class MapperTest {
         for (int i = 0; i < 1_000_000; i++) {
             Destination destination = new Destination();
             ExtendedSourceObject sourceObject = new ExtendedSourceObject();
-            sourceObject.setTitle("foobar");
-            sourceObject.setSubObject(new SubObject("a", null, 1L ));
-            sourceObject.setMoreJson(moreJson);
+            sourceObject.title("foobar");
+            sourceObject.subObject(new SubObject("a", null, 1L ));
+            sourceObject.moreJson(moreJson);
 
             mapper.map(sourceObject, destination);
 
@@ -63,8 +66,7 @@ class MapperTest {
 
     @Test
     public void toRecord() {
-        SourceObject sourceObject = new SourceObject();
-        sourceObject.setTitle("bla bla");
+        SourceObject sourceObject = new SourceObject().title("bla bla");
         var builder = DestinationRecord.builder();
         MAPPER.map(sourceObject, builder);
         var r = builder.build();
@@ -95,7 +97,7 @@ class MapperTest {
     @Test
     void withDefaults() {
         SourceObject sourceObject = new SourceObject();
-        sourceObject.setJson("""
+        sourceObject.json("""
             {
                 title: "foo",
                 description: "bar"
@@ -103,8 +105,8 @@ class MapperTest {
             """.getBytes(StandardCharsets.UTF_8));
 
         AnotherDestination anotherDestination = MAPPER.map(sourceObject, AnotherDestination.class);
-        assertThat(anotherDestination.getTitle()).isEqualTo("foo");
-        assertThat(anotherDestination.getDescription()).isEqualTo("bar");
+        assertThat(anotherDestination.title()).isEqualTo("foo");
+        assertThat(anotherDestination.description()).isEqualTo("bar");
 
     }
 

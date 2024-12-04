@@ -36,9 +36,9 @@ jobs:
           gpg-passphrase: GPG_SECRET_KEY_PASSPHRASE
       - name: Build and deploy with Maven
         run: |
-          mv src/main/java/module-info.java /tmp
+          (cd mv src/main/java; mv module-info.java module-info.java.not)
           mvn generate-sources -Ddelombok.skip=false
-          mv /tmp/module-info.java src/main/java/
+          (cd mv src/main/java; mv module-info.java.not module-info.java)
           cp -f src/main/java/module-info.java target/delombok
           mvn -Pdeploy -B test deploy
         env:

@@ -1,24 +1,30 @@
 package org.meeuw.mapping.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jayway.jsonpath.*;
-import com.jayway.jsonpath.spi.json.*;
-import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
-import com.jayway.jsonpath.spi.mapper.MappingProvider;
+import lombok.extern.log4j.Log4j2;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import lombok.extern.log4j.Log4j2;
-import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.Test;
 import org.meeuw.mapping.*;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
+import com.jayway.jsonpath.spi.json.JsonProvider;
+import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+import com.jayway.jsonpath.spi.mapper.MappingProvider;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.meeuw.mapping.Mapper.MAPPER;
 
 @Log4j2
 class JsonUtilTest {
-    
+
     static {
         Configuration.setDefaults(new Configuration.Defaults() {
 
@@ -68,37 +74,37 @@ class JsonUtilTest {
     @Test
     void getValue() throws NoSuchFieldException {
         ExtendedSourceObject sourceObject = new ExtendedSourceObject();
-        sourceObject.setJson("{'title': 'foobar'}".getBytes(StandardCharsets.UTF_8));
+        sourceObject.json("{'title': 'foobar'}".getBytes(StandardCharsets.UTF_8));
 
 
         Optional<Object> title = JsonUtil.getSourceValueFromJson(sourceObject, Destination.class.getDeclaredField("title"), List.of());
         assertThat(title).contains("foobar");
     }
-    
-    
+
+
     @Test
     public void mapJsonObject() throws JsonProcessingException {
         SubObject subObject = new SubObject();
 
-        JsonNode node = new ObjectMapper().readTree(""" 
+        JsonNode node = new ObjectMapper().readTree("""
           {
                "currentbroadcaster.broadcaster": {
                             "value": "209345",
                               "origin": "https://lab-vapp-bng-01.mam.beeldengeluid.nl/api/metadata/thesaurus/~THE30/209345",
                               "resolved_value": "VPRO"
-                            }                        
+                            }
           }
           """);
         MAPPER.map(node, subObject);
 
-        assertThat(subObject.getBroadcaster()).isEqualTo("VPRO");
-        
+        assertThat(subObject.broadcaster()).isEqualTo("VPRO");
+
     }
-    
+
     @Test
     void list() throws NoSuchFieldException {
         SourceObject source = new SourceObject();
-        source.setMoreJson(""" 
+        source.moreJson("""
           {
             "nisv.currentbroadcaster": [
                           {
@@ -121,17 +127,17 @@ class JsonUtilTest {
 
 
         List<SubObject> list = (List<SubObject>) JsonUtil.getSourceValueFromJson(source, Destination.class.getDeclaredField("list"), List.of()).orElseThrow();
-        
+
         assertThat(list).hasSize(2);
-        
-        assertThat(list.get(0).getBroadcaster()).isEqualTo("VPRO");
-        
+
+        assertThat(list.get(0).broadcaster()).isEqualTo("VPRO");
+
     }
-    
+
     @Test
     void list2() throws NoSuchFieldException, IOException {
         SourceObject source = new SourceObject();
-        source.setMoreJson(""" 
+        source.moreJson("""
           {
             "nisv.currentbroadcaster": [
                           {
@@ -152,19 +158,19 @@ class JsonUtilTest {
           }
           """);
            log.info("Hoi");
-           JsonNode node = new ObjectMapper().readTree(source.getMoreJson());
-           
-                   
+           JsonNode node = new ObjectMapper().readTree(source.moreJson());
+
+
 
         MappingProvider mappingProvider = new JacksonMappingProvider();
 
         List<SubObject> list2 = (List<SubObject>) JsonUtil.getSourceValueFromJson(source, Destination.class.getDeclaredField("list2"), List.of()).orElseThrow();
-           
+
         assertThat(list2).hasSize(2);
-        
-           
-        
-        
+
+
+
+
     }
 
 
