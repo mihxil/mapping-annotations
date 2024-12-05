@@ -133,7 +133,7 @@ public class Mapper {
             result.putAll(getMappedDestinationProperties(superClass, destinationClass));
         }
         for (Field field : destinationClass.getDeclaredFields()) {
-            getAnnotation(sourceClass, field, groups)
+            getAnnotation(sourceClass, destinationClass, field, groups)
                 .ifPresent(a -> result.put(field.getName(), field));
         }
         return Collections.unmodifiableMap(result);
@@ -141,15 +141,21 @@ public class Mapper {
 
     /**
      * Returns a function that will use reflection get the value from a source object that maps to the destination field.
+     * @param destinationClass Field of the destination
      * @param destinationField Field of the destination
      * @param sourceClass Class of a source object
      * @param groups If not empty, only mapping is done if one (or more) of the given groups matches one of the groups of the source annotations.
      */
-    public Optional<Function<Object, Optional<Object>>> sourceGetter(Field destinationField, Class<?> sourceClass, Class<?>... groups) {
+    public Optional<Function<Object, Optional<Object>>> sourceGetter(Class<?> destinationClass, Field destinationField, Class<?> sourceClass, Class<?>... groups) {
         Map<Class<?>, Optional<Function<Object, Optional<Object>>>> c = GETTER_CACHE.computeIfAbsent(destinationField, (fi) -> new ConcurrentHashMap<>());
-        return c.computeIfAbsent(sourceClass, cl -> _sourceGetter(destinationField, sourceClass));
+        return c.computeIfAbsent(sourceClass, cl -> _sourceGetter(destinationClass, destinationField, sourceClass));
 
     }
+    /*
+    public Optional<Function<Object, Optional<Object>>> sourceGetter(Field destinationField, Class<?> sourceClass, Class<?>... groups) {
+
+    }
+*/
 
 
 
@@ -182,12 +188,12 @@ public class Mapper {
         Object source,
         Object destination,
         Class<?>... groups) {
-        Optional<Function<Object, Optional<Object>>> getter = sourceGetter(destinationField, sourceClass, groups);
+        Optional<Function<Object, Optional<Object>>> getter = sourceGetter(destination.getClass(), destinationField, sourceClass, groups);
 
         if (getter.isPresent()) {
             Optional<Object> value = getter.get().apply(source);
             value.ifPresentOrElse(v ->
-                    destinationSetter(destinationField, sourceClass).accept(destination, v),
+                    destinationSetter(destination.getClass(), destinationField, sourceClass).accept(destination, v),
                 () -> log.debug("No field found for {} ({}) {}", destinationField.getName(), getAllSourceAnnotations(destinationField), sourceClass));
         } else {
             log.debug("Ignored destination field {} (No (matching) @Source annotation for {})", destinationField, sourceClass);
@@ -200,10 +206,10 @@ public class Mapper {
 
 
     /**
-     * Uncached version of {@link #sourceGetter(Field, Class, Class[])}
+     * Uncached version of {@link #sourceGetter(Class, Field, Class, Class[])}
      */
-    private static Optional<Function<Object, Optional<Object>>> _sourceGetter(Field destinationField, Class<?> sourceClass, Class<?>... groups) {
-        Optional<EffectiveSource> annotation = getAnnotation(sourceClass, destinationField, groups);
+    private static Optional<Function<Object, Optional<Object>>> _sourceGetter(Class<?> destinationClass, Field destinationField, Class<?> sourceClass, Class<?>... groups) {
+        Optional<EffectiveSource> annotation = getAnnotation(sourceClass, destinationClass, destinationField, groups);
         if (annotation.isPresent()) {
             final EffectiveSource s = annotation.get();
             String sourceFieldName = s.field();
@@ -227,7 +233,7 @@ public class Mapper {
         return Optional.empty();
     }
 
-    private static final Map<Field, Map<Class<?>, BiConsumer<Object, Object>>> SETTER_CACHE = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Map<Field, Map<Class<?>, BiConsumer<Object, Object>>>> SETTER_CACHE = new ConcurrentHashMap<>();
 
     /**
      * Returns a BiConsumer, that for a certain {@code destinationField} consumes a destination object, and sets a value
@@ -235,16 +241,17 @@ public class Mapper {
      * @param destinationField The field to set
      * @param sourceClass The currently matched class of the source object
      */
-    private static  BiConsumer<Object, Object> destinationSetter(Field destinationField, Class<?> sourceClass) {
-        Map<Class<?>, BiConsumer<Object, Object>> cache = SETTER_CACHE.computeIfAbsent(destinationField, fi -> new ConcurrentHashMap<>());
-        return cache.computeIfAbsent(sourceClass, c -> _destinationSetter(destinationField, c));
+    private static  BiConsumer<Object, Object> destinationSetter(Class<?> destinationClass, Field destinationField, Class<?> sourceClass) {
+        Map<Field, Map<Class<?>, BiConsumer<Object, Object>>> classCache = SETTER_CACHE.computeIfAbsent(destinationClass, fi -> new ConcurrentHashMap<>());
+        Map<Class<?>, BiConsumer<Object, Object>> cache = classCache.computeIfAbsent(destinationField, fi -> new ConcurrentHashMap<>());
+        return cache.computeIfAbsent(sourceClass, c -> _destinationSetter(destinationClass, destinationField, c));
     }
 
     /**
-     * Uncached version of {@link #destinationSetter(Field, Class)}
+     * Uncached version of {@link #destinationSetter(Class, Field, Class)}
      */
-    private static  BiConsumer<Object, Object> _destinationSetter(Field f, Class<?> sourceClass) {
-        Optional<EffectiveSource> annotation = getAnnotation(sourceClass, f);
+    private static  BiConsumer<Object, Object> _destinationSetter(Class<?> destinationClass, Field f, Class<?> sourceClass) {
+        Optional<EffectiveSource> annotation = getAnnotation(sourceClass, destinationClass, f);
         if (annotation.isPresent()) {
             EffectiveSource s = annotation.get();
             String sourceFieldName = s.field();

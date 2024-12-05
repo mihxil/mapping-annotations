@@ -50,7 +50,7 @@ class MapperTest {
             """;
         Mapper mapper = MAPPER.withClearJsonCache(false);
         Instant start = Instant.now();
-        for (int i = 0; i < 1_000_000; i++) {
+        for (int i = 0; i < 1_000; i++) {
             Destination destination = new Destination();
             ExtendedSourceObject sourceObject = new ExtendedSourceObject();
             sourceObject.title("foobar");

@@ -3,13 +3,16 @@
  */
 package org.meeuw.mapping.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import lombok.extern.slf4j.Slf4j;
+
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import lombok.extern.slf4j.Slf4j;
+
 import org.meeuw.mapping.annotations.Source;
 import org.meeuw.mapping.annotations.Sources;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Contains methods performing the reflection and caching needed to implement {@link org.meeuw.mapping.Mapper}, and {@link Source} annotations
@@ -26,14 +29,14 @@ public class Util {
 
 
 
-    public static Optional<EffectiveSource> getAnnotation(Class<?> sourceClass, Field destinationField, Class<?>... groups) {
+    public static Optional<EffectiveSource> getAnnotation(Class<?> sourceClass, Class<?> destinationClass, Field destinationField, Class<?>... groups) {
 
         destinationField =  associatedBuilderField(destinationField).orElse(destinationField);
         Source defaultValues = null;
         {
-            Class<?> clazz = destinationField.getDeclaringClass();
+            Class<?> clazz = destinationClass;
             while(clazz != Object.class && defaultValues == null) {
-                defaultValues = destinationField.getDeclaringClass().getAnnotation(Source.class);
+                defaultValues = clazz.getAnnotation(Source.class);
                 clazz = clazz.getSuperclass();
             }
         }
@@ -113,7 +116,7 @@ public class Util {
                 }
             }
             if (!foundMatch) {
-               return false; 
+               return false;
             }
         }
         String field = source.field();
@@ -156,7 +159,7 @@ public class Util {
             }
             log.debug("No source field {} found for {}", sourceField, sourceClass);
             return Optional.empty();
-    }     
+    }
 
     public static Optional<Object> getSourceValue(Object source, String sourceField, String... path) {
 
@@ -180,7 +183,7 @@ public class Util {
               log.warn(e.getMessage());
               return Optional.empty();
           }
-          
+
     }
 
 

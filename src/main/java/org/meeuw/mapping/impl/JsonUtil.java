@@ -58,8 +58,8 @@ public class JsonUtil {
 
         .build();
 
-    static Optional<Object> getSourceValueFromJson(Object source, Field destination, List<String> path, Class<?>... groups) {
-        EffectiveSource annotation = getAnnotation(source.getClass(), destination, groups).orElseThrow();
+    static Optional<Object> getSourceValueFromJson(Object source, Class<?> destinationClass, Field destination, List<String> path, Class<?>... groups) {
+        EffectiveSource annotation = getAnnotation(source.getClass(), destinationClass, destination, groups).orElseThrow();
         String field = annotation.field();
         if ("".equals(field)) {
             field = destination.getName();

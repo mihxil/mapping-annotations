@@ -77,7 +77,7 @@ class JsonUtilTest {
         sourceObject.json("{'title': 'foobar'}".getBytes(StandardCharsets.UTF_8));
 
 
-        Optional<Object> title = JsonUtil.getSourceValueFromJson(sourceObject, Destination.class.getDeclaredField("title"), List.of());
+        Optional<Object> title = JsonUtil.getSourceValueFromJson(sourceObject, Destination.class, Destination.class.getDeclaredField("title"), List.of());
         assertThat(title).contains("foobar");
     }
 
@@ -126,7 +126,7 @@ class JsonUtilTest {
           """);
 
 
-        List<SubObject> list = (List<SubObject>) JsonUtil.getSourceValueFromJson(source, Destination.class.getDeclaredField("list"), List.of()).orElseThrow();
+        List<SubObject> list = (List<SubObject>) JsonUtil.getSourceValueFromJson(source, Destination.class, Destination.class.getDeclaredField("list"), List.of()).orElseThrow();
 
         assertThat(list).hasSize(2);
 
@@ -164,7 +164,7 @@ class JsonUtilTest {
 
         MappingProvider mappingProvider = new JacksonMappingProvider();
 
-        List<SubObject> list2 = (List<SubObject>) JsonUtil.getSourceValueFromJson(source, Destination.class.getDeclaredField("list2"), List.of()).orElseThrow();
+        List<SubObject> list2 = (List<SubObject>) JsonUtil.getSourceValueFromJson(source, Destination.class, Destination.class.getDeclaredField("list2"), List.of()).orElseThrow();
 
         assertThat(list2).hasSize(2);
 

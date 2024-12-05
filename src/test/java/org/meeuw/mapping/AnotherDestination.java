@@ -6,14 +6,12 @@ import org.meeuw.mapping.annotations.Source;
 
 @Getter@Setter
 @Source(field = "json")
-public class AnotherDestination {
+public class AnotherDestination extends  AbstractDestination {
 
     public AnotherDestination() {
 
     }
-    
-    @Source(jsonPointer ="/title")
-    String title;
+
 
     @Source(jsonPointer ="/description")
     String description;
