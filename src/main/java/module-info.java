@@ -7,6 +7,7 @@ module org.meeuw.mapping.annotations {
 
     requires transitive com.fasterxml.jackson.databind;
     requires json.path;
+    requires transitive jakarta.xml.bind;
 
     exports org.meeuw.mapping.annotations;
     exports org.meeuw.mapping;

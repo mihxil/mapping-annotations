@@ -48,7 +48,7 @@ class MapperTest {
         String moreJson = """
             {"title": "foobar"}
             """;
-        Mapper mapper = MAPPER.withClearJsonCache(false);
+        Mapper mapper = MAPPER.withClearJsonCache(false).withSupportXmlTypeAdapters(false);
         Instant start = Instant.now();
         for (int i = 0; i < 1_000; i++) {
             Destination destination = new Destination();

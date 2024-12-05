@@ -3,6 +3,7 @@
  */
 package org.meeuw.mapping;
 
+import lombok.AllArgsConstructor;
 import lombok.With;
 import lombok.extern.slf4j.Slf4j;
 
@@ -11,6 +12,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+
+import jakarta.xml.bind.annotation.adapters.XmlAdapter;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import org.meeuw.mapping.annotations.Source;
 import org.meeuw.mapping.impl.EffectiveSource;
@@ -28,6 +32,8 @@ import static org.meeuw.mapping.impl.Util.*;
  * @since 0.1
  */
 @Slf4j
+@AllArgsConstructor
+@lombok.Builder
 public class Mapper {
 
     /**
@@ -44,11 +50,10 @@ public class Mapper {
     @With
     private final boolean clearJsonCache;
 
-    @lombok.Builder
-    public Mapper(
-        boolean clearJsonCache) {
-        this.clearJsonCache = clearJsonCache;
-    }
+    @With
+    @lombok.Builder.Default
+    private final boolean supportXmlTypeAdapters = true;
+
 
 
     /**
@@ -241,7 +246,7 @@ public class Mapper {
      * @param destinationField The field to set
      * @param sourceClass The currently matched class of the source object
      */
-    private static  BiConsumer<Object, Object> destinationSetter(Class<?> destinationClass, Field destinationField, Class<?> sourceClass) {
+    private  BiConsumer<Object, Object> destinationSetter(Class<?> destinationClass, Field destinationField, Class<?> sourceClass) {
         Map<Field, Map<Class<?>, BiConsumer<Object, Object>>> classCache = SETTER_CACHE.computeIfAbsent(destinationClass, fi -> new ConcurrentHashMap<>());
         Map<Class<?>, BiConsumer<Object, Object>> cache = classCache.computeIfAbsent(destinationField, fi -> new ConcurrentHashMap<>());
         return cache.computeIfAbsent(sourceClass, c -> _destinationSetter(destinationClass, destinationField, c));
@@ -250,7 +255,7 @@ public class Mapper {
     /**
      * Uncached version of {@link #destinationSetter(Class, Field, Class)}
      */
-    private static  BiConsumer<Object, Object> _destinationSetter(Class<?> destinationClass, Field f, Class<?> sourceClass) {
+    private  BiConsumer<Object, Object> _destinationSetter(Class<?> destinationClass, Field f, Class<?> sourceClass) {
         Optional<EffectiveSource> annotation = getAnnotation(sourceClass, destinationClass, f);
         if (annotation.isPresent()) {
             EffectiveSource s = annotation.get();
@@ -259,7 +264,7 @@ public class Mapper {
                 f.setAccessible(true);
                 return (destination, o) -> {
                     try {
-                        f.set(destination, o);
+                        f.set(destination, valueFor(f, o));
                     } catch (Exception e) {
                         log.warn("When setting {} in {}: {}", o, f, e.getMessage());
                     }
@@ -273,7 +278,7 @@ public class Mapper {
                 f.setAccessible(true);
                 return (destination, o) -> {
                     try {
-                        f.set(destination, o);
+                        f.set(destination, valueFor(f, o));
                     } catch (Exception e) {
                         log.warn("When setting '{}' in {}: {}", o, f, e.getMessage());
                     }
@@ -283,5 +288,27 @@ public class Mapper {
         return (d, v) -> {};
     }
 
+
+    private static final Map<Field, Optional<XmlAdapter>> ADAPTERS = new ConcurrentHashMap<>();
+    Object valueFor(Field f, Object o) throws Exception {
+        if (supportXmlTypeAdapters) {
+            XmlAdapter adapter = ADAPTERS.computeIfAbsent(f, (field) -> {
+                XmlJavaTypeAdapter annotation = field.getAnnotation(XmlJavaTypeAdapter.class);
+                if (annotation != null) {
+                    try {
+                        XmlAdapter xmlAdapter = annotation.value().getDeclaredConstructor().newInstance();
+                        return Optional.of(xmlAdapter);
+                    } catch (Exception e) {
+                        log.warn(e.getMessage(), e);
+                    }
+                }
+                return Optional.empty();
+            }).orElse(null);
+            if (adapter != null) {
+                return adapter.unmarshal(o);
+            }
+        }
+        return o;
+    }
 
 }
