@@ -151,6 +151,24 @@ public class Program {
 For all fields in this class with `@Source` annotations the default value of the `sourceClass` and `field` attributes are not empty, but as specified on class level. In this way it is easy to map a bunch of field all from one source field (in this case `payload`), in this case for example by only specifing `@Source(jsonPointer='<something>')`
 
 
+== Custom mappings
+
+Sometimes it's not feasible to map a suboject entirely by just adding annotaions.
+
+E.g. a 'json' payload can be pointed to, but automatic unmapping of this is not feasible.
+
+The mapper can have custom mappings then:
+
+[source, java]
+----
+Mapper mapper = MAPPER.withCustomMapper(destinationType, (o) -> {
+  return <new object of type destiatnionType mapped from incoming o>
+}
+
+----
+
+
+
 == Performance
 
 All reflection stuff that during profiling seemed to be expensive is implicitly cached. The result of json parsing is cached
