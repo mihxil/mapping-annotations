@@ -49,7 +49,7 @@ class MapperTest {
         String moreJson = """
             {"title": "foobar"}
             """;
-        Mapper mapper = MAPPER.withClearJsonCache(false).withSupportXmlTypeAdapters(false);
+        Mapper mapper = MAPPER.withClearJsonCacheEveryTime(false).withSupportXmlTypeAdapters(false);
         Instant start = Instant.now();
         for (int i = 0; i < 1_000; i++) {
             Destination destination = new Destination();
@@ -81,12 +81,12 @@ class MapperTest {
        assertThat(MAPPER.getMappedDestinationProperties(
            ExtendedSourceObject.class,
            Destination.class
-       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "id", "list", "list2", "sub");
+       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "id", "list", "list2", "sub", "subs");
 
        assertThat(MAPPER.getMappedDestinationProperties(
            SourceObject.class,
            Destination.class
-       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "list", "list2", "sub");
+       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "list", "list2", "sub", "subs");
    }
 
     @Test
@@ -122,7 +122,7 @@ class MapperTest {
     void customMapping() {
 
 
-        Mapper mapper = MAPPER.withCustomJsonMapper(SubDestination.class, (json) -> {
+        Mapper mapper = MAPPER.withCustomJsonMapper(SubDestination.class, (json, field) -> {
             SubDestination so =  new SubDestination();
             so.a(json.get("title").asText() + "/" + json.get("description").asText());
             return Optional.of(so);
@@ -147,7 +147,7 @@ class MapperTest {
     @Test
     void customMappingForList() {
 
-        Mapper mapper = MAPPER.withCustomJsonMapper(SubDestination.class, (json) -> {
+        Mapper mapper = MAPPER.withCustomJsonMapper(SubDestination.class, (json, field) -> {
             if (json.isObject() && json.has("title") && json.has("description")) {
                 SubDestination so = new SubDestination();
                 so.a(json.get("title").asText() + "/" + json.get("description").asText());

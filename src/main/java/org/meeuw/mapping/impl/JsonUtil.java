@@ -7,14 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-
-import org.meeuw.mapping.MapException;
-import org.meeuw.mapping.Mapper;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -77,10 +73,10 @@ public class JsonUtil {
                 throw new IllegalStateException();
             }
             return getSourceJsonValueByPath(source, sourceField, annotation.path(), annotation.jsonPath())
-                .map(o -> unwrapJsonIfPossible(o, destination));
+                .map(o -> ValueMapper.unwrapCollections(annotation, o, destination));
         } else {
             return getSourceJsonValueByPointer(source, sourceField, annotation.path(), annotation.jsonPointer())
-                .map(o -> unwrapJsonIfPossible(o, destination));
+                .map(o -> ValueMapper.unwrapCollections(annotation, o, destination));
         }
     }
 
@@ -116,30 +112,6 @@ public class JsonUtil {
         }
     }
 
-    static Object unwrapJsonIfPossible(Object json, Field destination) {
-        if (json instanceof List<?> list) {
-            if (destination.getType() == List.class) {
-                ParameterizedType genericType = (ParameterizedType) destination.getGenericType();
-                Class<?> genericClass = (Class<?>) genericType.getActualTypeArguments()[0];
-                if (genericClass != Object.class) {
-                    return list.stream()
-                        .map(o -> {
-                                try {
-                                    return Mapper.CURRENT.get()
-                                        .subMap(o, genericClass, destination);
-                                } catch (MapException me) {
-                                    log.warn(me.getMessage(), me);
-                                    return null;
-                                }
-                            }
-                        ).toList();
-                }
-            }
-
-        }
-        return json;
-
-    }
 
     static class Key {
         final Object object;

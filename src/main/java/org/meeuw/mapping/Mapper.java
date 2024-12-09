@@ -11,13 +11,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.*;
 
-import jakarta.xml.bind.annotation.adapters.XmlAdapter;
-import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-
 import org.meeuw.functional.Functions;
 import org.meeuw.mapping.annotations.Source;
-import org.meeuw.mapping.impl.EffectiveSource;
-import org.meeuw.mapping.impl.JsonUtil;
+import org.meeuw.mapping.impl.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -47,10 +43,14 @@ public class Mapper {
     /**
      * The Mapper currently effective. A {@link ThreadLocal}. Defaults to {@link #MAPPER}
      */
-    public static final ThreadLocal<Mapper> CURRENT = ThreadLocal.withInitial(() -> MAPPER);
+    private static final ThreadLocal<Mapper> CURRENT = ThreadLocal.withInitial(() -> MAPPER);
+
+    public static Mapper getCurrent() {
+        return CURRENT.get();
+    }
 
     @With
-    private final boolean clearJsonCache;
+    private final boolean clearJsonCacheEveryTime;
 
     @With
     @lombok.Builder.Default
@@ -58,7 +58,7 @@ public class Mapper {
 
     @With(AccessLevel.PACKAGE)
     @lombok.Builder.Default
-    private final Map<Class<?>, BiFunction<JsonNode, Field, Optional<Object>>> customJsonMappers = Collections.emptyMap();
+    private final Map<Class<?>, BiFunction<Object, Field, Optional<Object>>> customMappers = Collections.emptyMap();
 
 
     /**
@@ -81,35 +81,7 @@ public class Mapper {
 
     }
 
-    /**
-     * Just like {@link #map(Object, Class, Class[])}, but the json cache will not be deleted, and {@link #CURRENT} will not be
-     * set nor removed. This is basically meant to be called by sub mappings.
-     * @param source The source object copy data from
-     * @param destinationClass The class to create a destination object for
-     * @param groups If not empty, only mapping is done if one (or more) of the given groups matches one of the groups of the source annotations.
-     * @param <T> Type of the destination object
-     * @return A new instance of {@code destinationClass}, fill using {@code source}
-     */
-    public <T> T subMap(Object source, Class<T> destinationClass, Field destinationField, Class<?>... groups)  {
 
-        if (source instanceof JsonNode json){
-            BiFunction<JsonNode, Field, Optional<Object>> jsonNodeOptionalFunction = customJsonMappers.get(destinationClass);
-            if (jsonNodeOptionalFunction != null) {
-                Optional<Object>o = jsonNodeOptionalFunction.apply(json, destinationField);
-                if (o.isPresent()) {
-                    return (T) o.get();
-                }
-            }
-        }
-        try {
-            T destination = destinationClass.getDeclaredConstructor().newInstance();
-            subMap(source, destination, groups);
-            return destination;
-        } catch (ReflectiveOperationException e) {
-            throw new MapException(e);
-        }
-
-    }
 
     /**
      * Maps all fields in {@code destination} that are annoted with a {@link Source} that matched a field in {@code source}
@@ -120,10 +92,10 @@ public class Mapper {
     public void map(Object source, Object destination, Class<?>... groups) {
         try {
             CURRENT.set(this);
-            subMap(source, destination, groups);
+            privateMap(source, destination, destination.getClass(), groups);
         } finally {
             CURRENT.remove();
-            if (clearJsonCache) {
+            if (clearJsonCacheEveryTime) {
                 JsonUtil.clearCache();
             }
         }
@@ -136,8 +108,8 @@ public class Mapper {
      * @param destination The destination object
      * @param groups If not empty, only mapping is done if one (or more) of the given groups matches one of the groups of the source annotations.
      */
-     public void subMap(Object source, Object destination, Class<?>... groups) {
-         map(source, destination, destination.getClass(), groups);
+     public void subMap(Object source, Object destination, Class<?> destinationClass, Class<?>... groups) {
+         privateMap(source, destination, destinationClass, groups);
     }
 
     /**
@@ -161,12 +133,13 @@ public class Mapper {
 
     /**
      * Returns a function that will use reflection get the value from a source object that maps to the destination field.
-     * @param destinationClass Field of the destination
+     *
+     * @param sourceClass      Class of a source object
      * @param destinationField Field of the destination
-     * @param sourceClass Class of a source object
-     * @param groups If not empty, only mapping is done if one (or more) of the given groups matches one of the groups of the source annotations.
+     * @param destinationClass Field of the destination
+     * @param groups           If not empty, only mapping is done if one (or more) of the given groups matches one of the groups of the source annotations.
      */
-    public Optional<Function<Object, Optional<Object>>> sourceGetter(Class<?> destinationClass, Field destinationField, Class<?> sourceClass, Class<?>... groups) {
+    public Optional<Function<Object, Optional<Object>>> sourceGetter(Class<?> sourceClass, Field destinationField, Class<?> destinationClass, Class<?>... groups) {
         Map<Class<?>, Optional<Function<Object, Optional<Object>>>> c = GETTER_CACHE.computeIfAbsent(destinationField, (fi) -> new ConcurrentHashMap<>());
         return c.computeIfAbsent(sourceClass, cl -> _sourceGetter(destinationClass, destinationField, sourceClass));
 
@@ -178,14 +151,21 @@ public class Mapper {
 */
 
 
-    public Mapper withCustomJsonMapper(Class<?> destinationClass, BiFunction<JsonNode, Field, Optional<Object>> mapper) {
-        var current = new HashMap<>(customJsonMappers());
-        current.put(destinationClass, mapper);
-        return withCustomJsonMappers(Collections.unmodifiableMap(current));
+    public <D> Mapper withCustomJsonMapper(Class<D> destinationClass,  BiFunction<JsonNode, Field, Optional<Object>> mapper) {
+        return withCustomMapper(destinationClass, JsonNode.class, mapper);
+    }
+    public <D> Mapper withCustomJsonMapper(Class<D> destinationClass,  Function<JsonNode, Optional<Object>> mapper) {
+        return withCustomJsonMapper(destinationClass, Functions.ignoreArg2(mapper));
     }
 
-    public Mapper withCustomJsonMapper(Class<?> destinationClass, Function<JsonNode, Optional<Object>> mapper) {
-        return withCustomJsonMapper(destinationClass, Functions.ignoreArg2(mapper));
+    public <D, S> Mapper withCustomMapper(Class<D> destinationClass, Class<S> sourceClass, BiFunction<S, Field, Optional<Object>> mapper) {
+        var current = new HashMap<>(customMappers());
+        current.put(destinationClass, (o, f) -> mapper.apply((S) o, f));
+        return withCustomMappers(Collections.unmodifiableMap(current));
+    }
+
+    public <D, S> Mapper withCustomMapper(Class<D> destinationClass, Class<S> sourceClass, Function<S, Optional<Object>> mapper) {
+        return withCustomMapper(destinationClass, sourceClass, Functions.ignoreArg2(mapper));
     }
 
 
@@ -193,14 +173,14 @@ public class Mapper {
     ///  PRIVATE METHODS
 
     /**
-     * Helper class for {@link #map(Object, Object, Class...)}, recursively called for the class and superclass of the destination
+     * Helper method for {@link #map(Object, Object, Class...)}, recursively called for the class and superclass of the destination
      * object.
      */
-    private void map(Object source, Object destination, Class<?> forClass, Class<?>... groups) {
+    private void privateMap(Object source, Object destination, Class<?> forClass, Class<?>... groups) {
         Class<?> sourceClass = source.getClass();
         Class<?> superClass = forClass.getSuperclass();
         if (superClass != null) {
-            map(source, destination, superClass, groups);
+            privateMap(source, destination, superClass, groups);
         }
         for (Field f: forClass.getDeclaredFields()) {
             getAndSet(f, sourceClass, source, destination, groups);
@@ -218,7 +198,7 @@ public class Mapper {
         Object source,
         Object destination,
         Class<?>... groups) {
-        Optional<Function<Object, Optional<Object>>> getter = sourceGetter(destination.getClass(), destinationField, sourceClass, groups);
+        Optional<Function<Object, Optional<Object>>> getter = sourceGetter(sourceClass, destinationField, destination.getClass(), groups);
 
         if (getter.isPresent()) {
             Optional<Object> value = getter.get().apply(source);
@@ -283,13 +263,13 @@ public class Mapper {
     private  BiConsumer<Object, Object> _destinationSetter(Class<?> destinationClass, Field destinationField, Class<?> sourceClass) {
         Optional<EffectiveSource> annotation = getAnnotation(sourceClass, destinationClass, destinationField);
         if (annotation.isPresent()) {
-            EffectiveSource s = annotation.get();
-            String sourceFieldName = s.field();
+            EffectiveSource effectiveSource = annotation.get();
+            String sourceFieldName = effectiveSource.field();
             if (isJsonField(sourceClass)) {
                 destinationField.setAccessible(true);
                 return (destination, o) -> {
                     try {
-                        destinationField.set(destination, valueFor(s, destinationField, o));
+                        destinationField.set(destination, ValueMapper.valueFor(this, effectiveSource, destinationField, destinationClass,o));
                     } catch (Exception e) {
                         log.warn("When setting {} in {}: {}", o, destinationField, e.getMessage());
                     }
@@ -303,7 +283,7 @@ public class Mapper {
                 destinationField.setAccessible(true);
                 return (destination, o) -> {
                     try {
-                        destinationField.set(destination, valueFor(s, destinationField, o));
+                        destinationField.set(destination, ValueMapper.valueFor(this, effectiveSource, destinationField, destinationField.getType(), o));
                     } catch (Exception e) {
                         log.warn("When setting '{}' in {}: {}", o, destinationField, e.getMessage());
                     }
@@ -314,40 +294,7 @@ public class Mapper {
     }
 
 
-    private static final Map<Field, Optional<XmlAdapter>> ADAPTERS = new ConcurrentHashMap<>();
 
-    Object valueFor(EffectiveSource source, Field destinationField, Object o) throws Exception {
-        if (supportXmlTypeAdapters) {
-            XmlAdapter adapter = ADAPTERS.computeIfAbsent(destinationField, (field) -> {
-                XmlJavaTypeAdapter annotation = field.getAnnotation(XmlJavaTypeAdapter.class);
-                if (annotation != null) {
-                    try {
-                        XmlAdapter xmlAdapter = annotation.value().getDeclaredConstructor().newInstance();
-                        return Optional.of(xmlAdapter);
-                    } catch (Exception e) {
-                        log.warn(e.getMessage(), e);
-                    }
-                }
-                return Optional.empty();
-            }).orElse(null);
-            if (adapter != null) {
-                o = adapter.unmarshal(o);
-            }
-        }
-        if (o instanceof  JsonNode json) {
-            BiFunction<JsonNode, Field, Optional<Object>> customMapper = customJsonMappers.get(destinationField.getType());
-            if (customMapper != null) {
-                Optional<Object> tryMap = customMapper.apply(json, destinationField);
-                if (tryMap.isPresent()) {
-                    o = tryMap.get();
-                } else {
-//                    if ()
-                }
-            }
-
-        }
-        return o;
-    }
 
 
 
