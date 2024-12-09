@@ -84,7 +84,7 @@ class JsonUtilTest {
 
     @Test
     public void mapJsonObject() throws JsonProcessingException {
-        SubObject subObject = new SubObject();
+        SubSourceObject subObject = new SubSourceObject();
 
         JsonNode node = new ObjectMapper().readTree("""
           {
@@ -126,7 +126,7 @@ class JsonUtilTest {
           """);
 
 
-        List<SubObject> list = (List<SubObject>) JsonUtil.getSourceValueFromJson(source, Destination.class, Destination.class.getDeclaredField("list"), List.of()).orElseThrow();
+        List<SubSourceObject> list = (List<SubSourceObject>) JsonUtil.getSourceValueFromJson(source, Destination.class, Destination.class.getDeclaredField("list"), List.of()).orElseThrow();
 
         assertThat(list).hasSize(2);
 
@@ -164,7 +164,7 @@ class JsonUtilTest {
 
         MappingProvider mappingProvider = new JacksonMappingProvider();
 
-        List<SubObject> list2 = (List<SubObject>) JsonUtil.getSourceValueFromJson(source, Destination.class, Destination.class.getDeclaredField("list2"), List.of()).orElseThrow();
+        List<SubSourceObject> list2 = (List<SubSourceObject>) JsonUtil.getSourceValueFromJson(source, Destination.class, Destination.class.getDeclaredField("list2"), List.of()).orElseThrow();
 
         assertThat(list2).hasSize(2);
 

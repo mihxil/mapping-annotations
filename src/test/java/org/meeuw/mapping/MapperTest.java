@@ -5,6 +5,7 @@ import lombok.extern.log4j.Log4j2;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
@@ -54,7 +55,7 @@ class MapperTest {
             Destination destination = new Destination();
             ExtendedSourceObject sourceObject = new ExtendedSourceObject();
             sourceObject.title("foobar");
-            sourceObject.subObject(new SubObject("a", null, 1L ));
+            sourceObject.subObject(new SubSourceObject("a", null, 1L ));
             sourceObject.moreJson(moreJson);
 
             mapper.map(sourceObject, destination);
@@ -80,12 +81,12 @@ class MapperTest {
        assertThat(MAPPER.getMappedDestinationProperties(
            ExtendedSourceObject.class,
            Destination.class
-       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "id", "list", "list2");
+       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "id", "list", "list2", "sub");
 
        assertThat(MAPPER.getMappedDestinationProperties(
            SourceObject.class,
            Destination.class
-       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "list", "list2");
+       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "list", "list2", "sub");
    }
 
     @Test
@@ -116,6 +117,31 @@ class MapperTest {
             MAPPER.map(new Object(), ThrowingDestination.class);
         }).isInstanceOf(MapException.class);
     }
+
+    @Test
+    void customMapping() {
+
+
+        Mapper mapper = MAPPER.withCustomJsonMapper(SubDestination.class, (json) -> {
+            SubDestination so =  new SubDestination();
+            so.a(json.get("title").asText() + "/" + json.get("description").asText());
+            return Optional.of(so);
+
+            }
+        );
+
+        SourceObject sourceObject = new SourceObject();
+        sourceObject.json("""
+            {
+                title: "foo",
+                description: "bar"
+            }
+            """.getBytes(StandardCharsets.UTF_8));
+
+        Destination destination = mapper.map(sourceObject, Destination.class);
+        assertThat(destination.sub().a()).isEqualTo("foo/bar");
+    }
+
 
 
 }

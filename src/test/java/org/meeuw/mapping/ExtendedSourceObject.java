@@ -6,6 +6,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ExtendedSourceObject extends SourceObject{
-    
-    SubObject subObject;
+
+    SubSourceObject subObject;
 }

@@ -1,18 +1,22 @@
 package org.meeuw.mapping;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
+
 import org.meeuw.mapping.annotations.Source;
 
-@Getter@Setter
+import com.fasterxml.jackson.databind.JsonNode;
+
+@Getter
+@Setter
 public class Destination {
 
     public Destination() {
 
     }
-    
+
     @Source(field = "anotherJson", jsonPointer ="/title") // doesn't exist in SourceObject
     @Source(field = "json", jsonPointer ="/title", sourceClass = SourceObject.class)
     String title;
@@ -23,15 +27,19 @@ public class Destination {
 
     @Source(jsonPointer = "/")
     JsonNode moreJson;
-    
+
     @Source(field = "subObject", path="id", sourceClass = ExtendedSourceObject.class)
     Long id;
-    
+
     @Source(field = "moreJson", jsonPointer ="/nisv.currentbroadcaster", groups = Test1Class.class)
-    List<SubObject> list;
-    
+    List<SubSourceObject> list;
+
     @Source(field = "moreJson", jsonPath ="['nisv.currentbroadcaster'][*]['currentbroadcaster.broadcaster']", groups = Test2Class.class)
-    List<SubObject> list2;
+    List<SubSourceObject> list2;
+
+    @Source(field = "json", jsonPointer = "")
+    SubDestination sub;
+
 
 
 }

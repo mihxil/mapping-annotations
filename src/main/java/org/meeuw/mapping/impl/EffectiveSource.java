@@ -1,6 +1,7 @@
 package org.meeuw.mapping.impl;
 
 import java.util.Arrays;
+
 import org.meeuw.mapping.annotations.Source;
 
 @lombok.Builder
@@ -17,8 +18,6 @@ public record EffectiveSource(
 
     Class<?>[] groups
 ) {
-
-
 
     @Source
     private static class DefaultHolder { }
@@ -63,6 +62,12 @@ public record EffectiveSource(
          } else {
              builder.groups(source.groups());
          }
+/*
+        if (Arrays.equals(DEFAULTS.customMappers(), source.customMappers())) {
+            builder.customMappers(defaults.customMappers());
+         } else {
+             builder.customMappers(source.customMappers());
+         }*/
          return builder.build();
     }
 }

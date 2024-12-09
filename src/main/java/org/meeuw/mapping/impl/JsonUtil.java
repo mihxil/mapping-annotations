@@ -24,6 +24,7 @@ import com.jayway.jsonpath.*;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 
+import static org.meeuw.mapping.annotations.Source.UNSET;
 import static org.meeuw.mapping.impl.Util.getAnnotation;
 
 /**
@@ -61,7 +62,7 @@ public class JsonUtil {
     static Optional<Object> getSourceValueFromJson(Object source, Class<?> destinationClass, Field destination, List<String> path, Class<?>... groups) {
         EffectiveSource annotation = getAnnotation(source.getClass(), destinationClass, destination, groups).orElseThrow();
         String field = annotation.field();
-        if ("".equals(field)) {
+        if (UNSET.equals(field)) {
             field = destination.getName();
         }
         Field sourceField = Util.getSourceField(source.getClass(), field).orElseThrow();
@@ -72,8 +73,8 @@ public class JsonUtil {
     }
 
     public static Optional<Object> getSourceJsonValue(EffectiveSource annotation, Object source, Field sourceField, Field destination) {
-           if (!"".equals(annotation.jsonPath())) {
-            if (! "".equals(annotation.jsonPointer())) {
+        if (!UNSET.equals(annotation.jsonPath())) {
+            if (! UNSET.equals(annotation.jsonPointer())) {
                 throw new IllegalStateException();
             }
             return getSourceJsonValueByPath(source, sourceField, annotation.path(), annotation.jsonPath())
@@ -193,7 +194,7 @@ public class JsonUtil {
 
    public static Function<Object, Optional<Object>> valueFromJsonGetter(EffectiveSource s) {
        UnaryOperator<JsonNode> withField = UnaryOperator.identity();
-       if (!"".equals(s.field())) {
+       if (! UNSET.equals(s.field())) {
            withField = o -> o.get(s.field());
        }
        for (String p : s.path()) {
@@ -201,12 +202,12 @@ public class JsonUtil {
            withField = o -> prev.apply(o).get(p);
        }
        final UnaryOperator<JsonNode> finalWithFieldAndPath = withField;
-       if ("".equals(s.jsonPointer()) && "".equals(s.jsonPath())) {
+       if (UNSET.equals(s.jsonPointer()) && UNSET.equals(s.jsonPath())) {
            return o -> {
                JsonNode value = finalWithFieldAndPath.apply((JsonNode) o);
                return Optional.ofNullable(unwrapJson(value));
            };
-       } else if (! "".equals(s.jsonPointer())) {
+       } else if (! UNSET.equals(s.jsonPointer())) {
            return o -> {
                JsonNode value = finalWithFieldAndPath.apply((JsonNode) o);
                return Optional.ofNullable(unwrapJson(value.at(s.jsonPointer())));

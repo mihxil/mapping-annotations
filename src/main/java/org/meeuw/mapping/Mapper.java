@@ -3,8 +3,7 @@
  */
 package org.meeuw.mapping;
 
-import lombok.AllArgsConstructor;
-import lombok.With;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Field;
@@ -20,6 +19,9 @@ import org.meeuw.mapping.annotations.Source;
 import org.meeuw.mapping.impl.EffectiveSource;
 import org.meeuw.mapping.impl.JsonUtil;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
+import static org.meeuw.mapping.annotations.Source.UNSET;
 import static org.meeuw.mapping.impl.Util.*;
 
 /**
@@ -34,6 +36,7 @@ import static org.meeuw.mapping.impl.Util.*;
 @Slf4j
 @AllArgsConstructor
 @lombok.Builder
+@Getter
 public class Mapper {
 
     /**
@@ -54,6 +57,9 @@ public class Mapper {
     @lombok.Builder.Default
     private final boolean supportXmlTypeAdapters = true;
 
+    @With(AccessLevel.PACKAGE)
+    @lombok.Builder.Default
+    private final Map<Class<?>, Function<JsonNode, Optional<Object>>> customJsonMappers = Collections.emptyMap();
 
 
     /**
@@ -163,6 +169,12 @@ public class Mapper {
 */
 
 
+    public Mapper withCustomJsonMapper(Class<?> destinationClass, Function<JsonNode, Optional<Object>> mapper) {
+        var current = new HashMap<>(customJsonMappers());
+        current.put(destinationClass, mapper);
+        return withCustomJsonMappers(Collections.unmodifiableMap(current));
+    }
+
 
 
     ///  PRIVATE METHODS
@@ -206,14 +218,14 @@ public class Mapper {
     }
 
 
-    private static final Map<Field, Map<Class<?>, Optional<Function<Object, Optional<Object>>>>> GETTER_CACHE = new ConcurrentHashMap<>();
+    private final Map<Field, Map<Class<?>, Optional<Function<Object, Optional<Object>>>>> GETTER_CACHE = new ConcurrentHashMap<>();
 
 
 
     /**
      * Uncached version of {@link #sourceGetter(Class, Field, Class, Class[])}
      */
-    private static Optional<Function<Object, Optional<Object>>> _sourceGetter(Class<?> destinationClass, Field destinationField, Class<?> sourceClass, Class<?>... groups) {
+    private Optional<Function<Object, Optional<Object>>> _sourceGetter(Class<?> destinationClass, Field destinationField, Class<?> sourceClass, Class<?>... groups) {
         Optional<EffectiveSource> annotation = getAnnotation(sourceClass, destinationClass, destinationField, groups);
         if (annotation.isPresent()) {
             final EffectiveSource s = annotation.get();
@@ -221,14 +233,14 @@ public class Mapper {
             if (isJsonField(sourceClass)) {
               return Optional.of(JsonUtil.valueFromJsonGetter(s));
             }
-            if ("".equals(sourceFieldName)) {
+            if (UNSET.equals(sourceFieldName)) {
                 sourceFieldName = destinationField.getName();
             }
             Optional<Field> sourceField = getSourceField(sourceClass, sourceFieldName);
             if (sourceField.isPresent()) {
                 final Field sf = sourceField.get();
 
-                if ("".equals(s.jsonPointer()) && "".equals(s.jsonPath())) {
+                if (UNSET.equals(s.jsonPointer()) && UNSET.equals(s.jsonPath())) {
                     return Optional.of(source -> getSourceValue(source, sf, s.path()));
                 } else {
                     return Optional.of(source -> JsonUtil.getSourceJsonValue(s, source, sf, destinationField));
@@ -238,7 +250,7 @@ public class Mapper {
         return Optional.empty();
     }
 
-    private static final Map<Class<?>, Map<Field, Map<Class<?>, BiConsumer<Object, Object>>>> SETTER_CACHE = new ConcurrentHashMap<>();
+    private final Map<Class<?>, Map<Field, Map<Class<?>, BiConsumer<Object, Object>>>> SETTER_CACHE = new ConcurrentHashMap<>();
 
     /**
      * Returns a BiConsumer, that for a certain {@code destinationField} consumes a destination object, and sets a value
@@ -255,32 +267,32 @@ public class Mapper {
     /**
      * Uncached version of {@link #destinationSetter(Class, Field, Class)}
      */
-    private  BiConsumer<Object, Object> _destinationSetter(Class<?> destinationClass, Field f, Class<?> sourceClass) {
-        Optional<EffectiveSource> annotation = getAnnotation(sourceClass, destinationClass, f);
+    private  BiConsumer<Object, Object> _destinationSetter(Class<?> destinationClass, Field destinationField, Class<?> sourceClass) {
+        Optional<EffectiveSource> annotation = getAnnotation(sourceClass, destinationClass, destinationField);
         if (annotation.isPresent()) {
             EffectiveSource s = annotation.get();
             String sourceFieldName = s.field();
             if (isJsonField(sourceClass)) {
-                f.setAccessible(true);
+                destinationField.setAccessible(true);
                 return (destination, o) -> {
                     try {
-                        f.set(destination, valueFor(f, o));
+                        destinationField.set(destination, valueFor(s, destinationField, o));
                     } catch (Exception e) {
-                        log.warn("When setting {} in {}: {}", o, f, e.getMessage());
+                        log.warn("When setting {} in {}: {}", o, destinationField, e.getMessage());
                     }
                 };
             }
-            if ("".equals(sourceFieldName)) {
-                sourceFieldName = f.getName();
+            if (UNSET.equals(sourceFieldName)) {
+                sourceFieldName = destinationField.getName();
             }
             Optional<Field> sourceField = getSourceField(sourceClass, sourceFieldName);
             if (sourceField.isPresent()) {
-                f.setAccessible(true);
+                destinationField.setAccessible(true);
                 return (destination, o) -> {
                     try {
-                        f.set(destination, valueFor(f, o));
+                        destinationField.set(destination, valueFor(s, destinationField, o));
                     } catch (Exception e) {
-                        log.warn("When setting '{}' in {}: {}", o, f, e.getMessage());
+                        log.warn("When setting '{}' in {}: {}", o, destinationField, e.getMessage());
                     }
                 };
             }
@@ -290,7 +302,8 @@ public class Mapper {
 
 
     private static final Map<Field, Optional<XmlAdapter>> ADAPTERS = new ConcurrentHashMap<>();
-    Object valueFor(Field f, Object o) throws Exception {
+
+    Object valueFor(EffectiveSource source, Field f, Object o) throws Exception {
         if (supportXmlTypeAdapters) {
             XmlAdapter adapter = ADAPTERS.computeIfAbsent(f, (field) -> {
                 XmlJavaTypeAdapter annotation = field.getAnnotation(XmlJavaTypeAdapter.class);
@@ -305,10 +318,23 @@ public class Mapper {
                 return Optional.empty();
             }).orElse(null);
             if (adapter != null) {
-                return adapter.unmarshal(o);
+                o = adapter.unmarshal(o);
             }
+        }
+        if (o instanceof  JsonNode json) {
+            Function<JsonNode, Optional<Object>> customMapper = customJsonMappers.get(f.getType());
+            if (customMapper != null) {
+                Optional<Object> tryMap = customMapper.apply(json);
+                if (tryMap.isPresent()) {
+                    o = tryMap.get();
+                }
+            }
+
         }
         return o;
     }
+
+
+
 
 }

@@ -17,20 +17,22 @@ import java.lang.annotation.*;
 @Repeatable(Sources.class)
 public @interface Source {
 
+    String UNSET = "#UNSET";
+
     /**
      * Json path inside the other field. If not specified, it may be the entire field
      * Requires jways
      * @since 0.2
      * @return a json path e.g. {@code title.value}
      */
-    String jsonPath() default "";
+    String jsonPath() default UNSET;
 
     /**
      * Json pointer inside the other field.
      * @since 0.2
      * @return a json pointer. E.g. {@code /title/value}
      */
-    String jsonPointer() default "";
+    String jsonPointer() default UNSET;
 
 
     /**
@@ -40,7 +42,7 @@ public @interface Source {
      * (an example to explain this would probably be welcome)
      * @return The name of the field in the source class
      */
-    String field() default "";
+    String field() default UNSET;
 
 
     /**
@@ -70,5 +72,10 @@ public @interface Source {
      */
 
     Class<?>[] groups() default {};
+
+/*
+    Class<? extends BiFunction<Field, Object, Object>>[] customMappers() default {};*/
+
+
 
 }

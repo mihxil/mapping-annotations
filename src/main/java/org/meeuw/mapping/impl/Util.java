@@ -14,6 +14,8 @@ import org.meeuw.mapping.annotations.Sources;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import static org.meeuw.mapping.annotations.Source.UNSET;
+
 /**
  * Contains methods performing the reflection and caching needed to implement {@link org.meeuw.mapping.Mapper}, and {@link Source} annotations
  *
@@ -121,7 +123,7 @@ public class Util {
         }
         String field = source.field();
 
-        if ("".equals(field)) {
+        if (UNSET.equals(field)) {
             if (isJsonField(sourceClass))  {
                 return true;
             } else {
