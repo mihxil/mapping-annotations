@@ -3,7 +3,7 @@
   <groupId>org.meeuw.mapping</groupId>
   <artifactId>mapping-annotations</artifactId>
   <url>https://github.com/mihxil/mapping-annotations</url>
-  <version>0.5-SNAPSHOT</version>
+  <version>0.4-SNAPSHOT</version>
   <name>mapping-annotations</name>
   <description>Annotations then can be used to mark how to map objects</description>
 
@@ -150,7 +150,6 @@
         <configuration>
           <failOnError>false</failOnError>
           <show>public</show>
-          <sourcepath>${delombok.output}</sourcepath>
         </configuration>
       </plugin>
       <plugin>
