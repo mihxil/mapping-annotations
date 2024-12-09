@@ -150,6 +150,7 @@
         <configuration>
           <failOnError>false</failOnError>
           <show>public</show>
+          <source>${delombok.output}</source>
         </configuration>
       </plugin>
       <plugin>
