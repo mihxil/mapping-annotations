@@ -161,6 +161,8 @@
           <failOnError>false</failOnError>
           <show>public</show>
           <sourcepath>${delombok.output}</sourcepath>
+          <doclint>none</doclint>
+          <additionalJOption>-quiet</additionalJOption>
         </configuration>
       </plugin>
       <plugin>

@@ -86,7 +86,7 @@ public class Mapper {
 
 
     /**
-     * Maps all fields in {@code destination} that are annoted with a {@link Source} that matched a field in {@code source}
+     * Maps all fields in {@code destination} that are annotated with a {@link Source} that matched a field in {@code source}
      * @param source The source object
      * @param destination The destination object
      * @param groups If not empty, only mapping is done if one (or more) of the given groups matches one of the groups of the source annotations.
@@ -149,17 +149,21 @@ public class Mapper {
 
 
     /**
-     * Adds a custom mapping from a {@link JsonNode} to {@code destinationClass}
+     * Adds a custom mapping from a {@link JsonNode} to {@code destinationClass}. This is
+     * a convenience version of {@link #withCustomMapper(Class, Class, Function)}, where the first argument is {@link JsonNode}{@code .class}
      * @param destinationClass The target class
-     * @param mapper A {@link BiFunction} that accepts an object of tyep {@code SourceClass} and a {@link Field} in the destination where it is for.
-     * @see #withCustomJsonMapper(Class, Function)   For a version just accepting the {@link Function}, because the {@link Field} argument is often irrelevant*
+     * @param mapper A {@link BiFunction} that accepts an object of type {@code SourceClass} and a {@link Field} in the destination where it is for.
+     * <p>
+     * @see #withCustomJsonMapper(Class, Function)
      */
     public <D> Mapper withCustomJsonMapper(Class<D> destinationClass,  BiFunction<JsonNode, Field, Optional<D>> mapper) {
         return withCustomMapper(JsonNode.class, destinationClass, mapper);
     }
 
     /**
-     * Adds a custom mapping from a {@link JsonNode} to {@code destinationClass}
+     * Adds a custom mapping from a {@link JsonNode} to {@code destinationClass}. A convenience version
+     * of {@link #withCustomJsonMapper(Class, BiFunction)} which just accepts @ {@link Function} rather than a {@link BiFunction} because the second argument of the BiFunction can often just be ignored.
+     *
      * @param destinationClass The target class
      * @param mapper A {@link Function} that accepts an object of type {@code SourceClass} and produces an (optional of) the desired type.
      * @return A new mapper with the custom mapper added.
@@ -173,8 +177,8 @@ public class Mapper {
      * @param sourceClass The expected source type
      * @param destinationClass The target class
      * @param mapper A {@link BiFunction} that accepts an object of type {@code SourceClass} and a {@link Field} in the destination where it is for.
-     * @see #withCustomMapper(Class, Class, Function)   For a version just accepting the {@link Function}, because the {@link Field} argument is often irrelevant
-     * @see #withCustomJsonMapper(Class, BiFunction) (Class, Class, Function) For the common case where the source object is json
+     * @see #withCustomMapper(Class, Class, Function)
+     * @see #withCustomJsonMapper(Class, BiFunction)
      * @return A new mapper with the custom mapper added.
      */
     public <S, D> Mapper withCustomMapper(Class<S> sourceClass, Class<D> destinationClass, BiFunction<S, Field, Optional<D>> mapper) {
@@ -187,7 +191,8 @@ public class Mapper {
     }
 
     /**
-     * Adds a custom mapping from {@code sourceClass} to {@code destinationClass}
+     * Adds a custom mapping from {@code sourceClass} to {@code destinationClass}. A convenience version
+     * of {@link #withCustomMapper(Class, Class, BiFunction)} which just accepts @ {@link Function} rather than a {@link BiFunction} because the second argument of the BiFunction can often just be ignored.
      * @param sourceClass The expected source type
      * @param destinationClass The target class
      * @param mapper A {@link Function} that accepts an object of type {@code SourceClass}
