@@ -19,7 +19,6 @@ import org.meeuw.mapping.Mapper;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jayway.jsonpath.*;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
@@ -118,9 +117,7 @@ public class JsonUtil {
     }
 
     static Object unwrapJsonIfPossible(Object json, Field destination) {
-        if (json instanceof ObjectNode) {
-
-        } else if (json instanceof List<?> list) {
+        if (json instanceof List<?> list) {
             if (destination.getType() == List.class) {
                 ParameterizedType genericType = (ParameterizedType) destination.getGenericType();
                 Class<?> genericClass = (Class<?>) genericType.getActualTypeArguments()[0];

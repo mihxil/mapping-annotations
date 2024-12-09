@@ -12,8 +12,7 @@ import org.meeuw.mapping.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.*;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
@@ -168,10 +167,20 @@ class JsonUtilTest {
 
         assertThat(list2).hasSize(2);
 
-
-
-
     }
+
+    @Test
+
+    public void jsonPath() {
+        Object read = JsonPath.read("""
+            {
+                      "subs": []
+            }
+            """, "subs");
+        log.info("{}", read);
+    }
+
+
 
 
 }

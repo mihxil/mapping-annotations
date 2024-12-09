@@ -92,6 +92,16 @@ public class Mapper {
      * @return A new instance of {@code destinationClass}, fill using {@code source}
      */
     public <T> T subMap(Object source, Class<T> destinationClass, Class<?>... groups)  {
+
+        if (source instanceof JsonNode json){
+            Function<JsonNode, Optional<Object>> jsonNodeOptionalFunction = customJsonMappers.get(destinationClass);
+            if (jsonNodeOptionalFunction != null) {
+                Optional<Object>o = jsonNodeOptionalFunction.apply(json);
+                if (o.isPresent()) {
+                    return (T) o.get();
+                }
+            }
+        }
         try {
             T destination = destinationClass.getDeclaredConstructor().newInstance();
             subMap(source, destination, groups);
@@ -303,9 +313,9 @@ public class Mapper {
 
     private static final Map<Field, Optional<XmlAdapter>> ADAPTERS = new ConcurrentHashMap<>();
 
-    Object valueFor(EffectiveSource source, Field f, Object o) throws Exception {
+    Object valueFor(EffectiveSource source, Field destinationField, Object o) throws Exception {
         if (supportXmlTypeAdapters) {
-            XmlAdapter adapter = ADAPTERS.computeIfAbsent(f, (field) -> {
+            XmlAdapter adapter = ADAPTERS.computeIfAbsent(destinationField, (field) -> {
                 XmlJavaTypeAdapter annotation = field.getAnnotation(XmlJavaTypeAdapter.class);
                 if (annotation != null) {
                     try {
@@ -322,11 +332,13 @@ public class Mapper {
             }
         }
         if (o instanceof  JsonNode json) {
-            Function<JsonNode, Optional<Object>> customMapper = customJsonMappers.get(f.getType());
+            Function<JsonNode, Optional<Object>> customMapper = customJsonMappers.get(destinationField.getType());
             if (customMapper != null) {
                 Optional<Object> tryMap = customMapper.apply(json);
                 if (tryMap.isPresent()) {
                     o = tryMap.get();
+                } else {
+//                    if ()
                 }
             }
 

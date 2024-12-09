@@ -144,4 +144,34 @@ class MapperTest {
 
 
 
+    @Test
+    void customMappingForList() {
+
+        Mapper mapper = MAPPER.withCustomJsonMapper(SubDestination.class, (json) -> {
+            if (json.isObject() && json.has("title") && json.has("description")) {
+                SubDestination so = new SubDestination();
+                so.a(json.get("title").asText() + "/" + json.get("description").asText());
+                return Optional.of(so);
+            } else {
+                return Optional.empty();
+            }
+
+            }
+        );
+
+        SourceObject sourceObject = new SourceObject();
+        sourceObject.json("""
+            { "subs" : [
+            {
+                title: "foo",
+                description: "bar"
+            }]}
+            """.getBytes(StandardCharsets.UTF_8));
+
+        Destination destination = mapper.map(sourceObject, Destination.class);
+        assertThat(destination.subs().get(0).a()).isEqualTo("foo/bar");
+    }
+
+
+
 }

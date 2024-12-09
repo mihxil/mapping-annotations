@@ -40,6 +40,9 @@ public class Destination {
     @Source(field = "json", jsonPointer = "")
     SubDestination sub;
 
+    @Source(field = "json", jsonPath = "subs")
+    List<SubDestination> subs;
+
 
 
 }
