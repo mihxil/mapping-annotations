@@ -156,9 +156,13 @@ class MapperTest {
             } else {
                 return Optional.empty();
             }
-
             }
-        );
+        ).withCustomMapper(SubDestination.class, SubDestination.class, (s, f) -> {
+            if (s.b() == null) {
+                s.b(f.getName());
+            }
+            return Optional.of(s);
+        });
 
         SourceObject sourceObject = new SourceObject();
         sourceObject.json("""
@@ -171,6 +175,8 @@ class MapperTest {
 
         Destination destination = mapper.map(sourceObject, Destination.class);
         assertThat(destination.subs().get(0).a()).isEqualTo("foo/bar");
+        assertThat(destination.subs().get(0).b()).isEqualTo("subs");
+
     }
 
 

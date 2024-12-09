@@ -15,8 +15,6 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import org.meeuw.mapping.MapException;
 import org.meeuw.mapping.Mapper;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import static org.meeuw.mapping.Mapper.current;
 
 @Slf4j
@@ -33,27 +31,29 @@ public class ValueMapper {
         return o;
     }
 
-    private static final Map<Field, Optional<XmlAdapter>> ADAPTERS = new ConcurrentHashMap<>();
+    private static final Map<Field, Optional<XmlAdapter<?, ?>>> ADAPTERS = new ConcurrentHashMap<>();
 
     private static Object considerXmlAdapter(Object o, Field destinationField) throws Exception {
-        XmlAdapter adapter = ADAPTERS.computeIfAbsent(destinationField, (field) -> {
+        Optional<XmlAdapter<?, ?>> adapter = ADAPTERS.computeIfAbsent(destinationField, (field) -> {
             XmlJavaTypeAdapter annotation = field.getAnnotation(XmlJavaTypeAdapter.class);
             if (annotation != null) {
                 try {
-                    XmlAdapter xmlAdapter = annotation.value().getDeclaredConstructor().newInstance();
+                    XmlAdapter<?, ?> xmlAdapter = annotation.value().getDeclaredConstructor().newInstance();
                     return Optional.of(xmlAdapter);
                 } catch (Exception e) {
                     log.warn(e.getMessage(), e);
                 }
             }
             return Optional.empty();
-        }).orElse(null);
-        if (adapter != null) {
-            o = adapter.unmarshal(o);
+        });
+        if (adapter.isPresent()) {
+            //noinspection unchecked,rawtypes
+            o = ((XmlAdapter) adapter.get()).unmarshal(o);
         }
         return o;
     }
 
+    @SuppressWarnings("unchecked")
     private static Object considerEnums(Object o, Field destinationField, boolean considerXmlEnum) throws NoSuchFieldException {
         if (destinationField.getType().isEnum() && o instanceof String string) {
             Class<Enum<?>> enumClass = (Class<Enum<?>>) destinationField.getType();
@@ -78,14 +78,12 @@ public class ValueMapper {
 
 
     private static Object considerJson(Mapper mapper, Object o, Field destinationField, Class<?> destinationClass) {
-        if (o instanceof  JsonNode json) {
-            BiFunction<Object, Field, Optional<Object>> customMapper = mapper.customMappers().get(destinationClass);
-            if (customMapper != null) {
-                Optional<Object> tryMap = customMapper.apply(json, destinationField);
+        List<BiFunction<Object, Field, Optional<Object>>> customMappers = mapper.customMappers().get(destinationClass);
+        if (customMappers != null) {
+            for (BiFunction<Object, Field, Optional<Object>> customMapper: customMappers){
+                Optional<Object> tryMap = customMapper.apply(o, destinationField);
                 if (tryMap.isPresent()) {
-                    return tryMap.get();
-                } else {
-//                    if ()
+                    o = tryMap.get();
                 }
             }
         }
@@ -107,9 +105,6 @@ public class ValueMapper {
                                 } catch (MapException me) {
                                     log.warn(me.getMessage(), me);
                                     return null;
-                                } catch (Exception e) {
-                                    log.warn(e.getMessage(), e);
-                                    return null;
                                 }
                             }
                         ).toList();
@@ -124,6 +119,7 @@ public class ValueMapper {
     /**
      *
      */
+    @SuppressWarnings({"ReassignedVariable", "unchecked"})
     public static <T> T subMap(Mapper mapper, Object source, Class<T> destinationClass, Field destinationField, Class<?>... groups)  {
 
         try {

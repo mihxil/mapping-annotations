@@ -60,7 +60,7 @@ public class Mapper {
     @With(AccessLevel.PACKAGE)
     @lombok.Builder.Default
     @Getter
-    private final Map<Class<?>, BiFunction<Object, Field, Optional<Object>>> customMappers = Collections.emptyMap();
+    private final Map<Class<?>, List<BiFunction<Object, Field, Optional<Object>>>> customMappers = Collections.emptyMap();
 
 
     /**
@@ -177,10 +177,12 @@ public class Mapper {
      * @see #withCustomJsonMapper(Class, BiFunction) (Class, Class, Function) For the common case where the source object is json
      * @return A new mapper with the custom mapper added.
      */
-    @SuppressWarnings("unchecked")
     public <S, D> Mapper withCustomMapper(Class<S> sourceClass, Class<D> destinationClass, BiFunction<S, Field, Optional<D>> mapper) {
         var current = new HashMap<>(customMappers());
-        current.put(destinationClass, (o, f) -> mapper.apply((S) o, f).map(d -> d));
+        var list = current.get(destinationClass);
+        List<BiFunction<Object, Field, Optional<Object>>> newList = list == null ? new ArrayList<>() : new ArrayList<>(list);
+        newList.add((o, f) -> mapper.apply( (S) o, f).map(d -> d));
+        current.put(destinationClass, Collections.unmodifiableList(newList));
         return withCustomMappers(Collections.unmodifiableMap(current));
     }
 
