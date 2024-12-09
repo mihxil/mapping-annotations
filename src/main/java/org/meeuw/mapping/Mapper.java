@@ -32,7 +32,6 @@ import static org.meeuw.mapping.impl.Util.*;
 @Slf4j
 @AllArgsConstructor
 @lombok.Builder
-@Getter
 public class Mapper {
 
     /**
@@ -50,14 +49,17 @@ public class Mapper {
     }
 
     @With
+    @Getter
     private final boolean clearJsonCacheEveryTime;
 
     @With
     @lombok.Builder.Default
+    @Getter
     private final boolean supportJaxbAnnotations = true;
 
     @With(AccessLevel.PACKAGE)
     @lombok.Builder.Default
+    @Getter
     private final Map<Class<?>, BiFunction<Object, Field, Optional<Object>>> customMappers = Collections.emptyMap();
 
 
