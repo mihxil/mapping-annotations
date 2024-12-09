@@ -81,12 +81,12 @@ class MapperTest {
        assertThat(MAPPER.getMappedDestinationProperties(
            ExtendedSourceObject.class,
            Destination.class
-       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "id", "list", "list2", "sub", "subs");
+       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "id", "list", "list2", "sub", "subs", "enumValue");
 
        assertThat(MAPPER.getMappedDestinationProperties(
            SourceObject.class,
            Destination.class
-       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "list", "list2", "sub", "subs");
+       ).keySet()).containsExactlyInAnyOrder("title", "description", "moreJson", "list", "list2", "sub", "subs", "enumValue");
    }
 
     @Test
@@ -132,9 +132,10 @@ class MapperTest {
 
         SourceObject sourceObject = new SourceObject();
         sourceObject.json("""
-            {
+            { sub: {
                 title: "foo",
                 description: "bar"
+                }
             }
             """.getBytes(StandardCharsets.UTF_8));
 
@@ -171,6 +172,37 @@ class MapperTest {
         Destination destination = mapper.map(sourceObject, Destination.class);
         assertThat(destination.subs().get(0).a()).isEqualTo("foo/bar");
     }
+
+
+    @Test
+    void enums() {
+
+        Mapper mapper = MAPPER;
+
+
+        SourceObject sourceObject = new SourceObject();
+        {
+            sourceObject.json("""
+                { "enum" : "a" }
+                """.getBytes(StandardCharsets.UTF_8));
+
+            Destination destination = mapper.map(sourceObject, Destination.class);
+            assertThat(destination.enumValue()).isEqualTo(ExampleEnum.a);
+        }
+
+        {
+            sourceObject.json("""
+                { "enum" : "alfa" }
+                """.getBytes(StandardCharsets.UTF_8));
+
+            Destination destination = mapper.map(sourceObject, Destination.class);
+            assertThat(destination.enumValue()).isEqualTo(ExampleEnum.a);
+
+            Destination destination2 = mapper.withSupportJaxbAnnotations(false).map(sourceObject, Destination.class);
+            assertThat(destination2.enumValue()).isNull();
+        }
+    }
+
 
 
 

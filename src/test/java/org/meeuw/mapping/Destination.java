@@ -37,11 +37,14 @@ public class Destination {
     @Source(field = "moreJson", jsonPath ="['nisv.currentbroadcaster'][*]['currentbroadcaster.broadcaster']", groups = Test2Class.class)
     List<SubSourceObject> list2;
 
-    @Source(field = "json", jsonPointer = "")
+    @Source(field = "json", jsonPointer = "/sub")
     SubDestination sub;
 
     @Source(field = "json", jsonPath = "subs")
     List<SubDestination> subs;
+
+    @Source(field ="json", jsonPath = "enum")
+    ExampleEnum enumValue;
 
 
 

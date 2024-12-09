@@ -309,7 +309,8 @@ public class Mapper {
                 destinationField.setAccessible(true);
                 return (destination, o) -> {
                     try {
-                        destinationField.set(destination, ValueMapper.valueFor(this, effectiveSource, destinationField, destinationField.getType(), o));
+                        Object convertedValue = ValueMapper.valueFor(this, effectiveSource, destinationField, destinationField.getType(), o);
+                        destinationField.set(destination, convertedValue);
                     } catch (Exception e) {
                         log.warn("When setting '{}' in {}: {}", o, destinationField, e.getMessage());
                     }
