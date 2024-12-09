@@ -3,11 +3,16 @@ package org.meeuw.mapping;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.List;
+
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import org.meeuw.mapping.annotations.Source;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
+import nl.vpro.xml.bind.LocalDateXmlAdapter;
 
 @Getter
 @Setter
@@ -47,5 +52,8 @@ public class Destination {
     ExampleEnum enumValue;
 
 
+    @XmlJavaTypeAdapter(LocalDateXmlAdapter.class)
+    @Source(field ="moreJson", jsonPath = "date")
+    LocalDate localDate;
 
 }

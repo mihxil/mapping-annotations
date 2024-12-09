@@ -22,7 +22,7 @@ public class ValueMapper {
 
 
 
-    public static  Object valueFor(Mapper mapper,  Field destinationField, Class<?> destinationClass,  Object o) throws Exception {
+    public static  Object valueFor(Mapper mapper,  Field destinationField, Class<?> destinationClass,  Object o) throws ReflectiveOperationException {
         if (mapper.supportsJaxbAnnotations()) {
            o = considerXmlAdapter(o, destinationField);
         }
@@ -33,7 +33,7 @@ public class ValueMapper {
 
     private static final Map<Field, Optional<XmlAdapter<?, ?>>> ADAPTERS = new ConcurrentHashMap<>();
 
-    private static Object considerXmlAdapter(Object o, Field destinationField) throws Exception {
+    private static Object considerXmlAdapter(Object o, Field destinationField)  {
         Optional<XmlAdapter<?, ?>> adapter = ADAPTERS.computeIfAbsent(destinationField, (field) -> {
             XmlJavaTypeAdapter annotation = field.getAnnotation(XmlJavaTypeAdapter.class);
             if (annotation != null) {
@@ -47,8 +47,12 @@ public class ValueMapper {
             return Optional.empty();
         });
         if (adapter.isPresent()) {
-            //noinspection unchecked,rawtypes
-            o = ((XmlAdapter) adapter.get()).unmarshal(o);
+            try {
+                //noinspection unchecked,rawtypes
+                o = ((XmlAdapter) adapter.get()).unmarshal(o);
+            } catch (Exception e) {
+                log.warn(e.getMessage());
+            }
         }
         return o;
     }
@@ -132,9 +136,6 @@ public class ValueMapper {
             return destination;
         } catch (ReflectiveOperationException e) {
             throw new MapException(e);
-        } catch (Exception e) {
-            log.warn(e.getMessage(), e);
-            return null;
         }
 
 

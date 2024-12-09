@@ -144,7 +144,6 @@ class MapperTest {
     }
 
 
-
     @Test
     void customMappingForList() {
 
@@ -209,6 +208,19 @@ class MapperTest {
         }
     }
 
+
+    @Test
+    void xmlAdapter() {
+        SourceObject sourceObject = new SourceObject();
+
+        sourceObject.moreJson("""
+            { "date" : "2024-12-09" }
+            """);
+
+        Destination destination = MAPPER.map(sourceObject, Destination.class);
+        assertThat(destination.localDate()).isEqualTo("2024-12-09");
+
+    }
 
 
 

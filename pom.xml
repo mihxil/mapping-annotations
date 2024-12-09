@@ -107,6 +107,12 @@
       <artifactId>mihxil-functional</artifactId>
       <version>1.11</version>
     </dependency>
+    <dependency>
+      <groupId>nl.vpro.shared</groupId>
+      <artifactId>vpro-shared-xml</artifactId>
+      <version>5.3.3</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
