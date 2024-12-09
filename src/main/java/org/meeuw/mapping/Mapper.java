@@ -144,28 +144,54 @@ public class Mapper {
         return c.computeIfAbsent(sourceClass, cl -> _sourceGetter(destinationClass, destinationField, sourceClass));
 
     }
-    /*
-    public Optional<Function<Object, Optional<Object>>> sourceGetter(Field destinationField, Class<?> sourceClass, Class<?>... groups) {
 
+
+    /**
+     * Adds a custom mapping from a {@link JsonNode} to {@code destinationClass}
+     * @param destinationClass The target class
+     * @param mapper A {@link BiFunction} that accepts an object of tyep {@code SourceClass} and a {@link Field} in the destination where it is for.
+     * @see #withCustomJsonMapper(Class, Function)   For a version just accepting the {@link Function}, because the {@link Field} argument is often irrelevant*
+     */
+    public <D> Mapper withCustomJsonMapper(Class<D> destinationClass,  BiFunction<JsonNode, Field, Optional<D>> mapper) {
+        return withCustomMapper(JsonNode.class, destinationClass, mapper);
     }
-*/
 
-
-    public <D> Mapper withCustomJsonMapper(Class<D> destinationClass,  BiFunction<JsonNode, Field, Optional<Object>> mapper) {
-        return withCustomMapper(destinationClass, JsonNode.class, mapper);
-    }
-    public <D> Mapper withCustomJsonMapper(Class<D> destinationClass,  Function<JsonNode, Optional<Object>> mapper) {
+    /**
+     * Adds a custom mapping from a {@link JsonNode} to {@code destinationClass}
+     * @param destinationClass The target class
+     * @param mapper A {@link Function} that accepts an object of type {@code SourceClass} and produces an (optional of) the desired type.
+     * @return A new mapper with the custom mapper added.
+     */
+    public <D> Mapper withCustomJsonMapper(Class<D> destinationClass,  Function<JsonNode, Optional<D>> mapper) {
         return withCustomJsonMapper(destinationClass, Functions.ignoreArg2(mapper));
     }
 
-    public <D, S> Mapper withCustomMapper(Class<D> destinationClass, Class<S> sourceClass, BiFunction<S, Field, Optional<Object>> mapper) {
+    /**
+     * Adds a custom mapping from {@code sourceClass} to {@code destinationClass}
+     * @param sourceClass The expected source type
+     * @param destinationClass The target class
+     * @param mapper A {@link BiFunction} that accepts an object of type {@code SourceClass} and a {@link Field} in the destination where it is for.
+     * @see #withCustomMapper(Class, Class, Function)   For a version just accepting the {@link Function}, because the {@link Field} argument is often irrelevant
+     * @see #withCustomJsonMapper(Class, BiFunction) (Class, Class, Function) For the common case where the source object is json
+     * @return A new mapper with the custom mapper added.
+     */
+
+    public <S, D> Mapper withCustomMapper(Class<S> sourceClass, Class<D> destinationClass, BiFunction<S, Field, Optional<D>> mapper) {
         var current = new HashMap<>(customMappers());
-        current.put(destinationClass, (o, f) -> mapper.apply((S) o, f));
+        current.put(destinationClass, (o, f) -> mapper.apply((S) o, f).map(d -> d));
         return withCustomMappers(Collections.unmodifiableMap(current));
     }
 
-    public <D, S> Mapper withCustomMapper(Class<D> destinationClass, Class<S> sourceClass, Function<S, Optional<Object>> mapper) {
-        return withCustomMapper(destinationClass, sourceClass, Functions.ignoreArg2(mapper));
+    /**
+     * Adds a custom mapping from {@code sourceClass} to {@code destinationClass}
+     * @param sourceClass The expected source type
+     * @param destinationClass The target class
+     * @param mapper A {@link Function} that accepts an object of type {@code SourceClass}
+     * @see #withCustomJsonMapper(Class, BiFunction) (Class, Function) For the common case where the source object is json
+     * @return A new mapper with the custom mapper added.
+     */
+    public <S, D> Mapper withCustomMapper(Class<S> sourceClass, Class<D> destinationClass, Function<S, Optional<D>> mapper) {
+        return withCustomMapper(sourceClass, destinationClass, Functions.ignoreArg2(mapper));
     }
 
 
