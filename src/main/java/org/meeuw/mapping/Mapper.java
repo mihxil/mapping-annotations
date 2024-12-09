@@ -9,12 +9,12 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
+import java.util.function.*;
 
 import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
+import org.meeuw.functional.Functions;
 import org.meeuw.mapping.annotations.Source;
 import org.meeuw.mapping.impl.EffectiveSource;
 import org.meeuw.mapping.impl.JsonUtil;
@@ -42,7 +42,6 @@ public class Mapper {
     /**
      * The default {@link Mapper} instance. Mappers are stateless, but can contain some configuration.
      */
-
     public static final Mapper MAPPER = Mapper.builder().build();
 
     /**
@@ -59,7 +58,7 @@ public class Mapper {
 
     @With(AccessLevel.PACKAGE)
     @lombok.Builder.Default
-    private final Map<Class<?>, Function<JsonNode, Optional<Object>>> customJsonMappers = Collections.emptyMap();
+    private final Map<Class<?>, BiFunction<JsonNode, Field, Optional<Object>>> customJsonMappers = Collections.emptyMap();
 
 
     /**
@@ -91,12 +90,12 @@ public class Mapper {
      * @param <T> Type of the destination object
      * @return A new instance of {@code destinationClass}, fill using {@code source}
      */
-    public <T> T subMap(Object source, Class<T> destinationClass, Class<?>... groups)  {
+    public <T> T subMap(Object source, Class<T> destinationClass, Field destinationField, Class<?>... groups)  {
 
         if (source instanceof JsonNode json){
-            Function<JsonNode, Optional<Object>> jsonNodeOptionalFunction = customJsonMappers.get(destinationClass);
+            BiFunction<JsonNode, Field, Optional<Object>> jsonNodeOptionalFunction = customJsonMappers.get(destinationClass);
             if (jsonNodeOptionalFunction != null) {
-                Optional<Object>o = jsonNodeOptionalFunction.apply(json);
+                Optional<Object>o = jsonNodeOptionalFunction.apply(json, destinationField);
                 if (o.isPresent()) {
                     return (T) o.get();
                 }
@@ -179,10 +178,14 @@ public class Mapper {
 */
 
 
-    public Mapper withCustomJsonMapper(Class<?> destinationClass, Function<JsonNode, Optional<Object>> mapper) {
+    public Mapper withCustomJsonMapper(Class<?> destinationClass, BiFunction<JsonNode, Field, Optional<Object>> mapper) {
         var current = new HashMap<>(customJsonMappers());
         current.put(destinationClass, mapper);
         return withCustomJsonMappers(Collections.unmodifiableMap(current));
+    }
+
+    public Mapper withCustomJsonMapper(Class<?> destinationClass, Function<JsonNode, Optional<Object>> mapper) {
+        return withCustomJsonMapper(destinationClass, Functions.ignoreArg2(mapper));
     }
 
 
@@ -332,9 +335,9 @@ public class Mapper {
             }
         }
         if (o instanceof  JsonNode json) {
-            Function<JsonNode, Optional<Object>> customMapper = customJsonMappers.get(destinationField.getType());
+            BiFunction<JsonNode, Field, Optional<Object>> customMapper = customJsonMappers.get(destinationField.getType());
             if (customMapper != null) {
-                Optional<Object> tryMap = customMapper.apply(json);
+                Optional<Object> tryMap = customMapper.apply(json, destinationField);
                 if (tryMap.isPresent()) {
                     o = tryMap.get();
                 } else {
