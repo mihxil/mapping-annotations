@@ -24,7 +24,7 @@ import static org.meeuw.mapping.impl.Util.*;
  * Utilities to do the actual mapping using {@link Source}
  * A {@code Mappper} is thread safe. It only contains (unmodifiable) configuration.
  * <p>
- * New mappers (with different configuration) can be created using {@link #builder()} or using 'withers' ({@link #withClearJsonCache(boolean)}) from an existing one.
+ * New mappers (with different configuration) can be created using {@link #builder()} or using 'withers' ({@link #withClearJsonCacheEveryTime(boolean)} (boolean)}) from an existing one.
  *
  * @author Michiel Meeuwissen
  * @since 0.1
