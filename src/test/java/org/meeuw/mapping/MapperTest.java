@@ -49,7 +49,7 @@ class MapperTest {
         String moreJson = """
             {"title": "foobar"}
             """;
-        Mapper mapper = MAPPER.withClearJsonCacheEveryTime(false).withSupportJaxbAnnotations(false);
+        Mapper mapper = MAPPER.withClearsJsonCacheEveryTime(false).withSupportsJaxbAnnotations(false);
         Instant start = Instant.now();
         for (int i = 0; i < 1_000; i++) {
             Destination destination = new Destination();
@@ -198,7 +198,7 @@ class MapperTest {
             Destination destination = mapper.map(sourceObject, Destination.class);
             assertThat(destination.enumValue()).isEqualTo(ExampleEnum.a);
 
-            Destination destination2 = mapper.withSupportJaxbAnnotations(false).map(sourceObject, Destination.class);
+            Destination destination2 = mapper.withSupportsJaxbAnnotations(false).map(sourceObject, Destination.class);
             assertThat(destination2.enumValue()).isNull();
         }
     }

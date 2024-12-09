@@ -17,37 +17,48 @@ import org.meeuw.mapping.Mapper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import static org.meeuw.mapping.Mapper.getCurrent;
+import static org.meeuw.mapping.Mapper.current;
 
 @Slf4j
 public class ValueMapper {
 
+
+
+    public static  Object valueFor(Mapper mapper,  Field destinationField, Class<?> destinationClass,  Object o) throws Exception {
+        if (mapper.supportsJaxbAnnotations()) {
+           o = considerXmlAdapter(o, destinationField);
+        }
+        o = considerEnums(o, destinationField, mapper.supportsJaxbAnnotations());
+        o = considerJson(mapper, o, destinationField, destinationClass);
+        return o;
+    }
+
     private static final Map<Field, Optional<XmlAdapter>> ADAPTERS = new ConcurrentHashMap<>();
 
-
-    public static  Object valueFor(Mapper mapper, EffectiveSource source, Field destinationField, Class<?> destinationClass,  Object o) throws Exception {
-        if (mapper.supportJaxbAnnotations()) {
-            XmlAdapter adapter = ADAPTERS.computeIfAbsent(destinationField, (field) -> {
-                XmlJavaTypeAdapter annotation = field.getAnnotation(XmlJavaTypeAdapter.class);
-                if (annotation != null) {
-                    try {
-                        XmlAdapter xmlAdapter = annotation.value().getDeclaredConstructor().newInstance();
-                        return Optional.of(xmlAdapter);
-                    } catch (Exception e) {
-                        log.warn(e.getMessage(), e);
-                    }
+    private static Object considerXmlAdapter(Object o, Field destinationField) throws Exception {
+        XmlAdapter adapter = ADAPTERS.computeIfAbsent(destinationField, (field) -> {
+            XmlJavaTypeAdapter annotation = field.getAnnotation(XmlJavaTypeAdapter.class);
+            if (annotation != null) {
+                try {
+                    XmlAdapter xmlAdapter = annotation.value().getDeclaredConstructor().newInstance();
+                    return Optional.of(xmlAdapter);
+                } catch (Exception e) {
+                    log.warn(e.getMessage(), e);
                 }
-                return Optional.empty();
-            }).orElse(null);
-            if (adapter != null) {
-                o = adapter.unmarshal(o);
             }
-
+            return Optional.empty();
+        }).orElse(null);
+        if (adapter != null) {
+            o = adapter.unmarshal(o);
         }
+        return o;
+    }
+
+    private static Object considerEnums(Object o, Field destinationField, boolean considerXmlEnum) throws NoSuchFieldException {
         if (destinationField.getType().isEnum() && o instanceof String string) {
             Class<Enum<?>> enumClass = (Class<Enum<?>>) destinationField.getType();
-            for (Enum<?> enumConstant : enumClass.getEnumConstants()) {
-                if (mapper.supportJaxbAnnotations()) {
+            if (considerXmlEnum) {
+                for (Enum<?> enumConstant : enumClass.getEnumConstants()) {
                     Field f = enumConstant.getDeclaringClass().getField(enumConstant.name());
                     XmlEnumValue xmlValue = f.getAnnotation(XmlEnumValue.class);
                     if (xmlValue != null && xmlValue.value().equals(string)) {
@@ -62,12 +73,17 @@ public class ValueMapper {
             }
 
         }
+        return o;
+    }
+
+
+    private static Object considerJson(Mapper mapper, Object o, Field destinationField, Class<?> destinationClass) {
         if (o instanceof  JsonNode json) {
             BiFunction<Object, Field, Optional<Object>> customMapper = mapper.customMappers().get(destinationClass);
             if (customMapper != null) {
                 Optional<Object> tryMap = customMapper.apply(json, destinationField);
                 if (tryMap.isPresent()) {
-                    o = tryMap.get();
+                    return tryMap.get();
                 } else {
 //                    if ()
                 }
@@ -77,7 +93,7 @@ public class ValueMapper {
     }
 
 
-    static Object unwrapCollections(EffectiveSource effectiveSource, Object possiblyACollection, Field destination) {
+    static Object unwrapCollections(Object possiblyACollection, Field destination) {
         if (possiblyACollection instanceof Collection<?> list) {
             if (destination.getType() == List.class) {
                 ParameterizedType genericType = (ParameterizedType) destination.getGenericType();
@@ -86,7 +102,7 @@ public class ValueMapper {
                     return list.stream()
                         .map(o -> {
                                 try {
-                                    Object mapped = subMap(getCurrent(), effectiveSource, o, genericClass, destination);
+                                    Object mapped = subMap(current(), o, genericClass, destination);
                                     return mapped;
                                 } catch (MapException me) {
                                     log.warn(me.getMessage(), me);
@@ -105,19 +121,13 @@ public class ValueMapper {
 
     }
 
-     /**
-     * Just like {@link #map(Object, Class, Class[])}, but the json cache will not be deleted, and {@link #CURRENT} will not be
-     * set nor removed. This is basically meant to be called by sub mappings.
-     * @param source The source object copy data from
-     * @param destinationClass The class to create a destination object for
-     * @param groups If not empty, only mapping is done if one (or more) of the given groups matches one of the groups of the source annotations.
-     * @param <T> Type of the destination object
-     * @return A new instance of {@code destinationClass}, fill using {@code source}
+    /**
+     *
      */
-    public static <T> T subMap(Mapper mapper, EffectiveSource effectiveSource,  Object source, Class<T> destinationClass, Field destinationField, Class<?>... groups)  {
+    public static <T> T subMap(Mapper mapper, Object source, Class<T> destinationClass, Field destinationField, Class<?>... groups)  {
 
         try {
-            source = ValueMapper.valueFor(mapper, effectiveSource, destinationField, destinationClass, source);
+            source = ValueMapper.valueFor(mapper, destinationField, destinationClass, source);
             if (destinationClass.isInstance(source)) {
                 return (T) source;
             }

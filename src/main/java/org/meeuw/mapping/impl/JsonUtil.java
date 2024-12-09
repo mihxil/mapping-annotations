@@ -73,10 +73,10 @@ public class JsonUtil {
                 throw new IllegalStateException();
             }
             return getSourceJsonValueByPath(source, sourceField, annotation.path(), annotation.jsonPath())
-                .map(o -> ValueMapper.unwrapCollections(annotation, o, destination));
+                .map(o -> ValueMapper.unwrapCollections( o, destination));
         } else {
             return getSourceJsonValueByPointer(source, sourceField, annotation.path(), annotation.jsonPointer())
-                .map(o -> ValueMapper.unwrapCollections(annotation, o, destination));
+                .map(o -> ValueMapper.unwrapCollections( o, destination));
         }
     }
 
@@ -113,24 +113,14 @@ public class JsonUtil {
     }
 
 
-    static class Key {
-        final Object object;
-
-        Key(Object object) {
-            this.object = object;
-        }
-
+    record Key(Object object) {
         @Override
-        public boolean equals(Object object){
+        public boolean equals(Object object) {
             return object instanceof Key other && this.object == other.object;
-        }
-        @Override
-        public int hashCode() {
-            return object.hashCode();
         }
     }
 
-    public static final ThreadLocal<Map<Key, JsonNode>> JSON_CACHE = ThreadLocal.withInitial(HashMap::new);
+    private static final ThreadLocal<Map<Key, JsonNode>> JSON_CACHE = ThreadLocal.withInitial(HashMap::new);
 
 
     public static void clearCache() {

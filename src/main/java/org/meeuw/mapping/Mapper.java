@@ -24,7 +24,7 @@ import static org.meeuw.mapping.impl.Util.*;
  * Utilities to do the actual mapping using {@link Source}
  * A {@code Mappper} is thread safe. It only contains (unmodifiable) configuration.
  * <p>
- * New mappers (with different configuration) can be created using {@link #builder()} or using 'withers' ({@link #withClearJsonCacheEveryTime(boolean)} (boolean)}) from an existing one.
+ * New mappers (with different configuration) can be created using {@link #builder()} or using 'withers' ({@link #withClearsJsonCacheEveryTime(boolean)} (boolean)}) from an existing one.
  *
  * @author Michiel Meeuwissen
  * @since 0.1
@@ -44,18 +44,18 @@ public class Mapper {
      */
     private static final ThreadLocal<Mapper> CURRENT = ThreadLocal.withInitial(() -> MAPPER);
 
-    public static Mapper getCurrent() {
+    public static Mapper current() {
         return CURRENT.get();
     }
 
     @With
     @Getter
-    private final boolean clearJsonCacheEveryTime;
+    private final boolean clearsJsonCacheEveryTime;
 
     @With
     @lombok.Builder.Default
     @Getter
-    private final boolean supportJaxbAnnotations = true;
+    private final boolean supportsJaxbAnnotations = true;
 
     @With(AccessLevel.PACKAGE)
     @lombok.Builder.Default
@@ -97,7 +97,7 @@ public class Mapper {
             privateMap(source, destination, destination.getClass(), groups);
         } finally {
             CURRENT.remove();
-            if (clearJsonCacheEveryTime) {
+            if (clearsJsonCacheEveryTime) {
                 JsonUtil.clearCache();
             }
         }
@@ -177,7 +177,7 @@ public class Mapper {
      * @see #withCustomJsonMapper(Class, BiFunction) (Class, Class, Function) For the common case where the source object is json
      * @return A new mapper with the custom mapper added.
      */
-
+    @SuppressWarnings("unchecked")
     public <S, D> Mapper withCustomMapper(Class<S> sourceClass, Class<D> destinationClass, BiFunction<S, Field, Optional<D>> mapper) {
         var current = new HashMap<>(customMappers());
         current.put(destinationClass, (o, f) -> mapper.apply((S) o, f).map(d -> d));
@@ -297,7 +297,7 @@ public class Mapper {
                 destinationField.setAccessible(true);
                 return (destination, o) -> {
                     try {
-                        destinationField.set(destination, ValueMapper.valueFor(this, effectiveSource, destinationField, destinationClass,o));
+                        destinationField.set(destination, ValueMapper.valueFor(this, destinationField, destinationClass,o));
                     } catch (Exception e) {
                         log.warn("When setting {} in {}: {}", o, destinationField, e.getMessage());
                     }
@@ -311,7 +311,7 @@ public class Mapper {
                 destinationField.setAccessible(true);
                 return (destination, o) -> {
                     try {
-                        Object convertedValue = ValueMapper.valueFor(this, effectiveSource, destinationField, destinationField.getType(), o);
+                        Object convertedValue = ValueMapper.valueFor(this, destinationField, destinationField.getType(), o);
                         destinationField.set(destination, convertedValue);
                     } catch (Exception e) {
                         log.warn("When setting '{}' in {}: {}", o, destinationField, e.getMessage());

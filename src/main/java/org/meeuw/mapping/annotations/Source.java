@@ -64,7 +64,7 @@ public @interface Source {
 
     /**
      * Similar to 'groups' in jakarta.validation. The idea is that certain mappings can be disabled/enabled
-     * but specifying groups.
+     * by specifying groups.
      *
      * EXPERIMENTAL
      * @since 0.2
@@ -73,8 +73,6 @@ public @interface Source {
 
     Class<?>[] groups() default {};
 
-/*
-    Class<? extends BiFunction<Field, Object, Object>>[] customMappers() default {};*/
 
 
 
