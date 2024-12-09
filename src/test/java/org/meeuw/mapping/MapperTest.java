@@ -49,7 +49,7 @@ class MapperTest {
         String moreJson = """
             {"title": "foobar"}
             """;
-        Mapper mapper = MAPPER.withClearJsonCacheEveryTime(false).withSupportXmlTypeAdapters(false);
+        Mapper mapper = MAPPER.withClearJsonCacheEveryTime(false).withSupportJaxbAnnotations(false);
         Instant start = Instant.now();
         for (int i = 0; i < 1_000; i++) {
             Destination destination = new Destination();

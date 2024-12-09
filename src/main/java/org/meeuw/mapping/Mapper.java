@@ -54,7 +54,7 @@ public class Mapper {
 
     @With
     @lombok.Builder.Default
-    private final boolean supportXmlTypeAdapters = true;
+    private final boolean supportJaxbAnnotations = true;
 
     @With(AccessLevel.PACKAGE)
     @lombok.Builder.Default

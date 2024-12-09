@@ -8,6 +8,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 
+import jakarta.xml.bind.annotation.XmlEnumValue;
 import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
@@ -25,7 +26,7 @@ public class ValueMapper {
 
 
     public static  Object valueFor(Mapper mapper, EffectiveSource source, Field destinationField, Class<?> destinationClass,  Object o) throws Exception {
-        if (mapper.supportXmlTypeAdapters()) {
+        if (mapper.supportJaxbAnnotations()) {
             XmlAdapter adapter = ADAPTERS.computeIfAbsent(destinationField, (field) -> {
                 XmlJavaTypeAdapter annotation = field.getAnnotation(XmlJavaTypeAdapter.class);
                 if (annotation != null) {
@@ -41,6 +42,25 @@ public class ValueMapper {
             if (adapter != null) {
                 o = adapter.unmarshal(o);
             }
+
+        }
+        if (destinationField.getType().isEnum() && o instanceof String string) {
+            Class<Enum<?>> enumClass = (Class<Enum<?>>) destinationField.getType();
+            for (Enum<?> enumConstant : enumClass.getEnumConstants()) {
+                if (mapper.supportJaxbAnnotations()) {
+                    Field f = enumConstant.getDeclaringClass().getField(enumConstant.name());
+                    XmlEnumValue xmlValue = f.getAnnotation(XmlEnumValue.class);
+                    if (xmlValue != null && xmlValue.value().equals(string)) {
+                        return enumConstant;
+                    }
+                }
+            }
+            for (Enum<?> enumConstant : enumClass.getEnumConstants()) {
+                if (enumConstant.name().equals(string)) {
+                    return enumConstant;
+                }
+            }
+
         }
         if (o instanceof  JsonNode json) {
             BiFunction<Object, Field, Optional<Object>> customMapper = mapper.customMappers().get(destinationClass);
