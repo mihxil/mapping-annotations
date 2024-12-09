@@ -126,7 +126,7 @@ public class JsonUtil {
                         .map(o -> {
                                 try {
                                     return Mapper.CURRENT.get()
-                                        .subMap(o, genericClass);
+                                        .subMap(o, genericClass, destination);
                                 } catch (MapException me) {
                                     log.warn(me.getMessage(), me);
                                     return null;
